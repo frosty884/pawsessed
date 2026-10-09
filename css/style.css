@@ -299,6 +299,15 @@ h3 { margin: 0 0 10px; font-size: 21px; font-weight: 700; }
 .map-note { font: 500 15px 'Fredoka', sans-serif; fill: rgba(255, 255, 255, .55); }
 .pin-room { font: 700 50px 'Fredoka', sans-serif; fill: #fff; }
 .pin-floor { font: 600 26px 'Fredoka', sans-serif; fill: #fff; }
+.map-road { fill: #3a3452; stroke: #4c4568; stroke-width: 2; stroke-linejoin: round; }
+.map-water { fill: #1d77a6; stroke: #4fb4e0; stroke-width: 2; }
+.map-sand { fill: #d6c38a; opacity: .6; }
+.map-trees { fill: #10301f; stroke: #1d4a30; stroke-width: 2; stroke-linejoin: round; }
+.map-bldg path { fill: #4a1d37; stroke: #6b2a4f; stroke-width: 3; stroke-linejoin: round; }
+.map-villa rect { fill: #8a3a28; stroke: #b4573c; stroke-width: 3; }
+.map-villa-d rect { fill: #b04a3a; stroke: #e07a4f; stroke-width: 3; }
+.chapel path { fill: none; stroke: #e9eef7; stroke-width: 4; stroke-linecap: round; }
+.d-outline { stroke: #ff7ad9; stroke-width: 5; }
 .route { stroke: #ff7ad9; stroke-width: 9; stroke-linecap: round; stroke-dasharray: 2 18; filter: url(#neon); }
 .map.drawn .route { animation: march 1.2s linear infinite; }
 @keyframes march { to { stroke-dashoffset: -40; } }
@@ -428,6 +437,7 @@ fieldset.platform input:focus-visible + span { outline: 3px solid var(--yellow);
 .merch-card { padding: 18px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--card-line); text-align: center; }
 .merch-card img { width: 100%; height: auto; filter: drop-shadow(0 12px 24px rgba(0, 0, 0, .55)); }
 .merch-card p { margin: 14px 0 0; }
+.merch-card .kao { white-space: nowrap; color: var(--pink); }
 .merch-card .btn-row { justify-content: center; }
 
 /* community */
