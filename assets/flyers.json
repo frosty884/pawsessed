@@ -4,7 +4,14 @@
   "w": 720,
   "h": 900,
   "title": "Pawsessed Lagoon",
-  "when": "AquatiFur 2026 \u00b7 this weekend"
+  "when": "this weekend"
+ },
+ {
+  "src": "assets/flyers/bite-the-curb.jpg",
+  "w": 720,
+  "h": 900,
+  "title": "Bite the Curb",
+  "when": "Greenline skatepark rave · Sep 19"
  },
  {
   "src": "assets/flyers/vortex-denfur.jpg",
@@ -18,14 +25,28 @@
   "w": 1050,
   "h": 600,
   "title": "Magia",
-  "when": "Anime Magic Con afterparty \u00b7 Aug 22"
+  "when": "Anime Magic Con · Aug 22"
+ },
+ {
+  "src": "assets/flyers/not-a-dog-park.jpg",
+  "w": 695,
+  "h": 900,
+  "title": "This Is Not a Dog Park!",
+  "when": "Greenline skate park popup · Jul 25"
+ },
+ {
+  "src": "assets/flyers/noctfurnal.jpg",
+  "w": 695,
+  "h": 900,
+  "title": "Noctfurnal",
+  "when": "furry music fest · Jul 17–19"
  },
  {
   "src": "assets/flyers/waifu4laifu.jpg",
-  "w": 498,
+  "w": 720,
   "h": 900,
   "title": "waifu4laifu",
-  "when": "Anime Midwest hotel party \u00b7 July 4"
+  "when": "Anime Midwest · July 4"
  },
  {
   "src": "assets/flyers/freakend.jpg",
@@ -59,8 +80,8 @@
   "src": "assets/flyers/synergy.jpg",
   "w": 720,
   "h": 900,
-  "title": "Greenline \u00d7 Project Unknown: Synergy",
-  "when": "Feb 28"
+  "title": "Synergy",
+  "when": "Greenline × Project Unknown · Feb 28"
  },
  {
   "src": "assets/flyers/pu-s2e6.jpg",

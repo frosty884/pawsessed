@@ -242,7 +242,7 @@ test('flyer lightbox opens, steps through flyers and closes', async () => {
   await page.waitForSelector('#lightbox:not([hidden])');
   assert.match(await text(page, '#lightbox-cap'), /Pawsessed Lagoon/);
   await page.keyboard.press('ArrowRight');
-  assert.match(await text(page, '#lightbox-cap'), /Vortex/);
+  assert.match(await text(page, '#lightbox-cap'), /Bite the Curb/);
   await page.keyboard.press('Escape');
   await page.waitForSelector('#lightbox', { hidden: true });
   await page.close();

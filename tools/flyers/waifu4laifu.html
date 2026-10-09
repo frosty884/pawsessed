@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>waifu4laifu flyer</title>
+<style>
+  /* rebuilt waifu4laifu flyer (Anime Midwest hotel party, July 4) for the past-parties strip. Rendered by render.mjs to 720x900. */
+  @font-face { font-family: 'Fredoka'; font-weight: 700; src: url(../../fonts/fredoka-latin-700-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Fredoka'; font-weight: 600; src: url(../../fonts/fredoka-latin-600-normal.woff2) format('woff2'); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 720px; height: 900px; overflow: hidden; background: #000; font-family: 'Fredoka', sans-serif; }
+  .card {
+    position: relative; width: 720px; height: 900px; overflow: hidden;
+    background:
+      radial-gradient(520px 420px at 72% 70%, rgba(255, 60, 170, .35), transparent 70%),
+      radial-gradient(420px 300px at 20% 20%, rgba(150, 70, 255, .25), transparent 70%),
+      linear-gradient(170deg, #2b0a3f 0%, #45104f 55%, #5a0f55 100%);
+  }
+  .frame { position: absolute; inset: 18px; border-radius: 34px; border: 4px solid #ff4fc3; box-shadow: 0 0 22px rgba(255, 79, 195, .8), inset 0 0 22px rgba(255, 79, 195, .35); }
+  .spark { position: absolute; width: 22px; height: 22px; }
+  .spark::before { content: ''; position: absolute; inset: 0; background: #ffe3f6; clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); }
+  .spark.y::before { background: #ffd66b; }
+  .invite { position: absolute; top: 56px; width: 100%; text-align: center; color: #fff; font-weight: 700; font-size: 26px; letter-spacing: .32em; }
+  .logo { position: absolute; top: 84px; left: 36px; width: 648px; filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .45)); }
+  .girl { position: absolute; right: -40px; bottom: -150px; height: 700px; filter: drop-shadow(0 0 26px rgba(255, 120, 210, .55)); }
+  .info { position: absolute; left: 48px; top: 368px; width: 330px; display: flex; flex-direction: column; gap: 14px; }
+  .kicker { color: #ff9ee0; font-weight: 700; font-size: 30px; line-height: 1.05; text-transform: uppercase; letter-spacing: .04em; }
+  .pill { align-self: flex-start; padding: 10px 20px; border-radius: 999px; background: #c2187e; color: #fff; font-weight: 700; font-size: 28px; box-shadow: 0 4px 0 #7a0c4f; }
+  .where { color: #fff; font-weight: 700; font-size: 30px; letter-spacing: .03em; }
+  .raffle { align-self: flex-start; margin-top: 6px; padding: 10px 18px; border-radius: 18px; border: 3px dashed #ff9ee0; color: #ffe3f6; font-weight: 600; font-size: 22px; line-height: 1.25; }
+  .bye { position: absolute; left: 48px; bottom: 54px; color: #ffb3ea; font-weight: 700; font-size: 34px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="frame"></div>
+  <i class="spark" style="left:70px;top:330px"></i>
+  <i class="spark y" style="left:640px;top:330px;transform:scale(.8)"></i>
+  <i class="spark" style="left:330px;top:700px;transform:scale(.7)"></i>
+  <i class="spark y" style="left:96px;top:760px;transform:scale(.6)"></i>
+  <i class="spark" style="left:610px;top:56px;transform:scale(.9)"></i>
+  <p class="invite">YOU'RE INVITED</p>
+  <img class="logo" src="w4l-logo.png" alt="">
+  <img class="girl" src="w4l-girl.png" alt="">
+  <div class="info">
+    <p class="kicker">Anime Midwest<br>hotel party</p>
+    <p class="pill">July 4 · 8PM–2AM</p>
+    <p class="where">EMBASSY SUITES</p>
+    <p class="raffle">raffle: Gloriosa figurine<br>+ custom shirt</p>
+  </div>
+  <p class="bye">see u there :3</p>
+</div>
+</body>
+</html>

@@ -76,8 +76,10 @@ lg = Image.open(os.path.join(MAGIA, 'logo.png')).convert('RGBA')
 lg = lg.resize((round(lg.width * 0.62), round(lg.height * 0.62)), Image.LANCZOS)
 mg.alpha_composite(lg, (24, mg.height - lg.height - 18))
 flyer('magia', mg, 'Magia', 'Anime Magic Con afterparty · Aug 22')
-w4l = Image.open(os.path.join(UPLOADS, '1b74fe93-image.png')).crop((14, 222, 878, 1782))
-flyer('waifu4laifu', w4l, 'waifu4laifu', 'Anime Midwest hotel party · July 4')
+# waifu4laifu is rebuilt from its logo + art by tools/flyers/render.mjs
+flyer('bite-the-curb', Image.open(os.path.join(UPLOADS, 'e6103f63-image.jpg')), 'Bite the Curb', 'Greenline skatepark rave · Sep 19')
+flyer('not-a-dog-park', Image.open(os.path.join(UPLOADS, 'eab85a3f-image.png')), 'This Is Not a Dog Park!', 'Greenline skate park popup · Jul 25')
+flyer('noctfurnal', Image.open(os.path.join(UPLOADS, 'd54c3e31-image.png')), 'Noctfurnal', 'furry music fest · Jul 17–19')
 flyer('freakend', Image.open(os.path.join(CHAT2, 'photo_11@28-08-2026_00-10-54.jpg')), 'Freakend', 'May 9')
 flyer('furry-pop-up', Image.open(os.path.join(CHAT2, 'photo_1@03-06-2026_19-13-28.jpg')), 'Furry Pop-Up Night', 'Miss Egg Roll, Chicago')
 flyer('pu-s2e9', Image.open(os.path.join(CHAT1, 'photo_18@24-08-2026_21-00-44.jpg')), 'Project Unknown S2E9', 'Mar 15')
@@ -86,7 +88,7 @@ flyer('synergy', Image.open(os.path.join(CHAT1, 'photo_17@24-08-2026_21-00-44.jp
 flyer('pu-s2e6', Image.open(os.path.join(MAGIA, 'flyer-s2e-matrix.jpg')), 'Project Unknown S2E6', 'Jan 25')
 flyer('pu-s2e2', Image.open(os.path.join(MAGIA, 'flyer-s2e2.jpg')), 'Project Unknown S2E2', 'Dec 14, 2025')
 flyer('vortex-aqf-2025', Image.open(os.path.join(CHAT1, 'photo_19@24-08-2026_21-11-00.jpg')), 'Run It Up, Turbo', 'Vortex @ AquatiFur 2025')
-json.dump(flyers, open(os.path.join(A, 'flyers.json'), 'w'), indent=1)
+# flyers.json (page order) is written by the site's flyer patch; the HTML strip is the source of truth
 
 # ---- promo media: the phone loop (shown on the page, best for Telegram), the story, posters
 shutil.copy(os.path.join(PROMO, 'pawsessed-lagoon-telegram.mp4'), os.path.join(M, 'pawsessed-lagoon.mp4'))
