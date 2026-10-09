@@ -176,6 +176,27 @@ function initMap() {
     g.innerHTML = '<ellipse cx="0" cy="3" rx="7" ry="6" fill="#ffd6f2"/><circle cx="-7" cy="-5" r="2.8" fill="#ffd6f2"/><circle cx="-2.5" cy="-8.5" r="2.8" fill="#ffd6f2"/><circle cx="2.5" cy="-8.5" r="2.8" fill="#ffd6f2"/><circle cx="7" cy="-5" r="2.8" fill="#ffd6f2"/>';
     paws.append(g);
   }
+  // tap the map to open a big, pannable copy (labels are small on a phone)
+  const card = $('#map-card'), zoom = $('#map-zoom'), scroll = $('#map-zoom-scroll');
+  const openZoom = () => {
+    const copy = svg.cloneNode(true);
+    copy.removeAttribute('id');
+    copy.classList.add('drawn');
+    scroll.replaceChildren(copy);
+    zoom.hidden = false;
+    document.body.style.overflow = 'hidden';
+    // start on the walk from the hotel to villa D
+    requestAnimationFrame(() => {
+      scroll.scrollLeft = (scroll.scrollWidth - scroll.clientWidth) * 0.62;
+      scroll.scrollTop = (scroll.scrollHeight - scroll.clientHeight) * 0.35;
+    });
+    $('#map-zoom-close').focus();
+  };
+  const closeZoom = () => { zoom.hidden = true; document.body.style.overflow = ''; card.focus(); };
+  card.addEventListener('click', openZoom);
+  card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openZoom(); } });
+  $('#map-zoom-close').addEventListener('click', closeZoom);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !zoom.hidden) closeZoom(); });
   const reveal = () => svg.classList.add('drawn');
   if (!('IntersectionObserver' in window) || reducedMotion) return reveal();
   const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { reveal(); io.disconnect(); } }, { threshold: 0.3 });

@@ -286,15 +286,19 @@ h3 { margin: 0 0 10px; font-size: 21px; font-weight: 700; }
 .notice::before { content: '📣 '; }
 
 /* ------------------------------------------------------------------ map */
-.map-card { margin: 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--card-line); box-shadow: 0 10px 40px rgba(0, 0, 0, .4); background: #14301f; }
+.map-card { cursor: zoom-in; margin: 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--card-line); box-shadow: 0 10px 40px rgba(0, 0, 0, .4); background: #14301f; }
 .map { display: block; width: 100%; height: auto; }
-.map-label { font: 600 24px 'Fredoka', sans-serif; fill: #fff; paint-order: stroke; stroke: #0d0820; stroke-width: 6px; stroke-linejoin: round; }
-.map-label.small { font-size: 19px; font-weight: 500; }
+.map-label { font: 600 30px 'Fredoka', sans-serif; fill: #fff; paint-order: stroke; stroke: #0d0820; stroke-width: 6px; stroke-linejoin: round; }
+.map-label.small { font-size: 25px; font-weight: 600; }
+.map-label.tiny { font-size: 20px; font-weight: 500; fill: #e6e9ff; }
+.map-label.faint { font-size: 26px; font-weight: 500; fill: rgba(255, 255, 255, .5); stroke-width: 0; font-style: italic; }
 .map-label.big { font-size: 34px; fill: #ffd6f2; }
+.kg { font: 700 28px 'Fredoka', sans-serif; fill: #fff3d6; }
+.roof-letter { font: 700 30px 'Fredoka', sans-serif; fill: #fff3d6; }
 .map-step { font: 700 26px 'Fredoka', sans-serif; fill: #1d0b3a; }
 .map-note { font: 500 15px 'Fredoka', sans-serif; fill: rgba(255, 255, 255, .55); }
-.pin-room { font: 700 54px 'Fredoka', sans-serif; fill: #fff; }
-.pin-floor { font: 600 24px 'Fredoka', sans-serif; fill: #fff; }
+.pin-room { font: 700 50px 'Fredoka', sans-serif; fill: #fff; }
+.pin-floor { font: 600 26px 'Fredoka', sans-serif; fill: #fff; }
 .route { stroke: #ff7ad9; stroke-width: 9; stroke-linecap: round; stroke-dasharray: 2 18; filter: url(#neon); }
 .map.drawn .route { animation: march 1.2s linear infinite; }
 @keyframes march { to { stroke-dashoffset: -40; } }
@@ -461,6 +465,9 @@ footer.site-footer b { color: var(--text); }
 .dj-link { margin-top: 16px; background: none; border: 1px solid rgba(255, 255, 255, .2); color: var(--muted); padding: 8px 16px; border-radius: 999px; cursor: pointer; font-size: 14px; }
 
 /* ------------------------------------------------------------------ overlays */
+.map-zoom { position: fixed; inset: 0; z-index: 60; background: #0a1430; animation: fade .2s ease; }
+.map-zoom-scroll { width: 100%; height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.map-zoom-scroll svg { display: block; width: max(220vw, 900px); max-width: none; height: auto; }
 .viewer { position: fixed; inset: 0; z-index: 60; background: #000; display: grid; place-items: center; animation: fade .25s ease; }
 .viewer video { width: 100%; height: 100%; object-fit: contain; }
 .viewer-close, .lb-close, .modal-x { position: absolute; top: max(14px, env(safe-area-inset-top)); right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .16); color: #fff; font-size: 20px; cursor: pointer; z-index: 2; }
