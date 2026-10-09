@@ -244,3 +244,28 @@ test('the sheet repairs itself if a tab was deleted', () => {
   assert.equal(req(g, 'Song', 'Artist').ok, true);
   assert.equal(g.sheet('Requests').rows().length, 1);
 });
+
+test('standalone script (made at script.google.com) creates its own sheet once and reuses it', () => {
+  const g = createGas({ standalone: true });
+  assert.equal(g.call.get().ok, true, 'the first request creates the sheet');
+  assert.equal(g.created(), 1);
+  assert.equal(g.props.get('SHEET_ID'), 'sheet-id-1');
+  assert.deepEqual([...g.sheets.keys()].sort(), ['Raffle', 'Requests', 'Settings']);
+  assert.equal(g.call.post({ action: 'request', title: 'Song', artist: 'Artist', by: 'Me', client: CLIENT }).ok, true);
+  assert.equal(g.ctx.setup(), 'https://docs.google.com/spreadsheets/d/sheet-id-1/edit');
+  assert.equal(g.created(), 1, 'never makes a second spreadsheet');
+});
+
+test('DJ portal: login gives the sheet link, draw and hide the raffle winner', () => {
+  const g = fresh();
+  const pw = { password: 'vortex' };
+  assert.equal(g.call.post({ action: 'djLogin', ...pw }).sheetUrl, 'https://docs.google.com/spreadsheets/d/sheet-id-1/edit');
+  assert.match(g.call.post({ action: 'djDraw', ...pw }).error, /No raffle entries/);
+  g.call.post({ action: 'raffle', handle: 'lucky_one', platform: 'telegram', client: CLIENT });
+  assert.match(g.call.post({ action: 'djDraw', password: 'nope' }).error, /Wrong password/);
+  const d = g.call.post({ action: 'djDraw', ...pw });
+  assert.deepEqual(d.winner, { ticket: 1, handle: '@lucky_one', platform: 'telegram' });
+  assert.deepEqual(d.state.raffle.winner, { platform: 'telegram', handle: '@lucky_one' });
+  const h = g.call.post({ action: 'djHideWinner', ...pw });
+  assert.equal(h.state.raffle.winner, null);
+});

@@ -560,6 +560,9 @@ function setDjMode(on) {
 
 function fillDjPanel() {
   const s = (state && state.settings) || {};
+  const sheet = session.get('sheetUrl');
+  $('#dj-sheet').hidden = !sheet;
+  if (sheet) $('#dj-sheet').href = sheet;
   $('#dj-open-req').checked = s.requestsOpen !== false;
   $('#dj-open-raffle').checked = s.raffleOpen !== false;
   $('#dj-now').value = s.nowSpinning || '';
@@ -609,6 +612,7 @@ function initDj() {
     const r = await call('POST', { action: 'djLogin', password });
     if (!r.ok) return setMsg(msg, r.error || 'Could not log in', 'err');
     session.set('djpw', password);
+    if (r.sheetUrl) session.set('sheetUrl', r.sheetUrl);
     form.elements.password.value = '';
     applyState(r.state);
     setDjMode(true);
@@ -635,8 +639,23 @@ function initDj() {
     applyState(r.state);
     setMsg(pmsg, `Cleared ${r.cleared} request${r.cleared === 1 ? '' : 's'}.`, 'ok');
   });
+  $('#dj-draw').addEventListener('click', async () => {
+    if (!confirm('Draw the raffle winner now? It shows on the site for everyone.')) return;
+    setMsg(pmsg, 'Drawing…');
+    const r = await call('POST', { action: 'djDraw', password: djPassword() });
+    if (!r.ok) return setMsg(pmsg, r.error || 'Could not draw', 'err');
+    applyState(r.state);
+    setMsg(pmsg, `🎉 Winner: ${r.winner.handle} (${r.winner.platform}, ticket #${r.winner.ticket})`, 'ok');
+  });
+  $('#dj-hide-winner').addEventListener('click', async () => {
+    const r = await call('POST', { action: 'djHideWinner', password: djPassword() });
+    if (!r.ok) return setMsg(pmsg, r.error || 'Could not hide it', 'err');
+    applyState(r.state);
+    setMsg(pmsg, 'Winner banner hidden.', 'ok');
+  });
   $('#dj-logout').addEventListener('click', () => {
     session.del('djpw');
+    session.del('sheetUrl');
     setDjMode(false);
     form.hidden = false;
     panel.hidden = true;

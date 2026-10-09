@@ -79,9 +79,12 @@ Sheet.prototype.getRange = function (...a) {
   return r instanceof Range ? rangeProxy(r) : r;
 };
 
-export function createGas({ now = () => Date.now() } = {}) {
+export function createGas({ now = () => Date.now(), standalone = false } = {}) {
   const sheets = new Map();
+  let created = 0;
   const ss = {
+    getId: () => 'sheet-id-1',
+    getUrl: () => 'https://docs.google.com/spreadsheets/d/sheet-id-1/edit',
     getSheetByName: (n) => (sheets.has(n) ? sheetProxy(sheets.get(n)) : null),
     insertSheet: (n) => { sheets.set(n, new Sheet(n)); return sheetProxy(sheets.get(n)); },
     getSheets: () => [...sheets.values()].map(sheetProxy),
@@ -97,7 +100,9 @@ export function createGas({ now = () => Date.now() } = {}) {
   const alerts = [];
   const ctx = {
     SpreadsheetApp: {
-      getActiveSpreadsheet: () => ss,
+      getActiveSpreadsheet: () => (standalone ? null : ss),
+      create: () => { created++; return ss; },
+      openById: (id) => { if (id !== 'sheet-id-1') throw new Error('not found'); return ss; },
       newDataValidation: chain,
       newConditionalFormatRule: chain,
       getUi: () => ({ createMenu: () => chain(), alert: (m) => alerts.push(m) }),
@@ -124,5 +129,5 @@ export function createGas({ now = () => Date.now() } = {}) {
     get: (params = {}) => JSON.parse(ctx.doGet({ parameter: params }).getContent()),
     post: (body) => JSON.parse(ctx.doPost({ postData: { contents: typeof body === 'string' ? body : JSON.stringify(body) } }).getContent()),
   };
-  return { ctx, ss, sheets, cache, props, alerts, call, sheet: (n) => sheets.get(n) };
+  return { ctx, ss, sheets, cache, props, alerts, call, sheet: (n) => sheets.get(n), created: () => created };
 }

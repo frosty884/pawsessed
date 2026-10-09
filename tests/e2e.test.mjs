@@ -178,7 +178,9 @@ test('DJ settings: announcement, now spinning, pausing requests', async () => {
   await page.waitForFunction(() => window.__pawsessed && window.__pawsessed.state);
   await page.click('#dj-bar-open');
   await page.waitForSelector('#dj-panel:not([hidden])');
+  await new Promise((r) => setTimeout(r, 150)); // the portal moves focus to its first control after opening
   await page.select('#dj-now', 'Bunitsi');
+  await page.click('#dj-notice');
   await page.type('#dj-notice', "Pizza's here! 🍕");
   await page.$eval('#dj-open-req', (c) => { c.checked = false; });
   await page.click('#dj-save');
@@ -262,5 +264,23 @@ test('every local asset the page references exists', async () => {
     const status = await page.evaluate(async (x) => (await fetch(x, { method: 'HEAD' })).status, u);
     assert.equal(status, 200, u);
   }
+  await page.close();
+});
+
+test('DJ portal can draw the raffle winner and shows the Google Sheet link', async () => {
+  srv.gas.call.post({ action: 'raffle', handle: 'portal_pick', platform: 'telegram', client: 'client-pppp-0001' });
+  const page = await open();
+  await page.click('#dj-open');
+  await page.type('#dj-form [name=password]', 'vortex');
+  await page.click('#dj-form button[type=submit]');
+  await page.waitForSelector('#dj-panel:not([hidden])');
+  assert.match(await page.$eval('#dj-sheet', (a) => a.href), /docs\.google\.com\/spreadsheets/);
+  assert.equal(await visible(page, '#dj-sheet'), true);
+  page.on('dialog', (d) => d.accept());
+  await page.click('#dj-draw');
+  await page.waitForFunction(() => document.querySelector('#dj-panel-msg').textContent.includes('Winner'));
+  await page.waitForSelector('#winner:not([hidden])');
+  await page.click('#dj-hide-winner');
+  await page.waitForSelector('#winner', { hidden: true });
   await page.close();
 });

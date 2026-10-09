@@ -1,9 +1,13 @@
 /**
  * Pawsessed Lagoon — party backend.
  *
- * A Google Apps Script web app bound to the party's Google Sheet. The website reads the live
- * song-request queue, raffle count and DJ settings from it and writes requests / raffle entries to it.
- * Sheets: "Requests", "Raffle", "Settings". Run setup() once (or use the 🌴 Pawsessed menu).
+ * A Google Apps Script web app backed by a Google Sheet. The website reads the live song-request queue,
+ * raffle count and DJ settings from it and writes requests / raffle entries to it.
+ * Works two ways:
+ *   - standalone (script.google.com > New project, easiest on a phone): the first run creates the
+ *     spreadsheet "Pawsessed Lagoon · requests & raffle" in your Drive and remembers it;
+ *   - bound to a Sheet (Extensions > Apps Script): uses that Sheet and adds a 🌴 Pawsessed menu.
+ * Tabs: "Requests", "Raffle", "Settings". Run setup() once to create them and log the Sheet's link.
  *
  * DJs can manage the queue right in the sheet: tick "Played" (or "Removed") and the request leaves
  * the website's queue within a few seconds.
@@ -35,7 +39,7 @@ var LIMITS = {
   badLoginsMax: 25, badLoginWindowSec: 600,
 };
 var CACHE_KEY = 'state:v1';
-var CACHE_SEC = 20;
+var CACHE_SEC = 10; // standalone scripts get no edit trigger, so sheet edits show within ~10s + one poll
 
 // ------------------------------------------------------------------ web app entry points
 
@@ -67,6 +71,8 @@ function doPost(e) {
     djRestore: djRestore_,
     djSettings: djSettings_,
     djClear: djClear_,
+    djDraw: djDraw_,
+    djHideWinner: djHideWinner_,
   };
   var fn = handlers[body && body.action];
   if (!fn) return json_({ ok: false, error: 'Unknown action' });
@@ -224,7 +230,20 @@ function enterRaffle_(b) {
 
 function djLogin_(b) {
   requireDj_(b);
-  return { dj: true };
+  return { dj: true, sheetUrl: ss_().getUrl() };
+}
+
+function djDraw_(b) {
+  requireDj_(b);
+  var w = drawWinner_();
+  if (!w) fail_('No raffle entries left to draw from.');
+  return { winner: w };
+}
+
+function djHideWinner_(b) {
+  requireDj_(b);
+  writeSettings_({ raffleWinner: '' });
+  return {};
 }
 
 function djRemove_(b) {
@@ -319,24 +338,29 @@ function refreshWebsite() {
   bustCache_();
 }
 
+// menu / editor version: draws and shows a popup when there is a sheet UI to show it in
 function drawRaffleWinner() {
+  var w = drawWinner_();
+  var ui = null;
+  try { ui = SpreadsheetApp.getUi(); } catch (ignored) {}
+  var msg = w ? '🎉 Winner: ' + w.handle + ' (' + w.platform + ', ticket #' + w.ticket + ')\n\nIt now shows on the website. Clear Settings > raffleWinner to hide it.'
+    : 'No raffle entries left to draw from.';
+  if (ui) ui.alert(msg); else console.log(msg);
+  return w;
+}
+
+function drawWinner_() {
   var sheet = sheet_(SHEET.raffle);
   var rows = readRows_(SHEET.raffle, RAFFLE_HEADERS.length);
   var pool = [];
   rows.forEach(function (r, i) { if (r[RF.handle] && !truthy_(r[RF.winner])) pool.push(i); });
-  var ui = null;
-  try { ui = SpreadsheetApp.getUi(); } catch (ignored) {}
-  if (!pool.length) {
-    if (ui) ui.alert('No raffle entries left to draw from.');
-    return null;
-  }
+  if (!pool.length) return null;
   var pick = pool[Math.floor(Math.random() * pool.length)];
   var r = rows[pick];
   sheet.getRange(pick + 2, RF.winner + 1).setValue(true);
   writeSettings_({ raffleWinner: String(r[RF.platform]) + ':' + String(r[RF.handle]) });
   bustCache_();
-  if (ui) ui.alert('🎉 Winner: ' + r[RF.handle] + ' (' + r[RF.platform] + ', ticket #' + r[RF.ticket] + ')\n\nIt now shows on the website. Clear Settings > raffleWinner to hide it.');
-  return { ticket: r[RF.ticket], handle: r[RF.handle], platform: r[RF.platform] };
+  return { ticket: Number(r[RF.ticket]), handle: String(r[RF.handle]), platform: String(r[RF.platform]) };
 }
 
 function markAllPlayed() {
@@ -350,9 +374,16 @@ function markAllPlayed() {
   bustCache_();
 }
 
-/** Creates (or repairs) the three sheets, their headers, checkboxes and the settings rows. Safe to re-run. */
+/** Creates (or repairs) the three tabs, their headers, checkboxes and the settings rows. Safe to re-run.
+ *  Prints the Sheet's link in the execution log. */
 function setup() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = ss_();
+  setupSheets_(ss);
+  console.log('✅ Sheet ready: ' + ss.getUrl());
+  return ss.getUrl();
+}
+
+function setupSheets_(ss) {
   var req = ensureSheet_(ss, SHEET.requests, REQ_HEADERS);
   req.getRange(2, RQ.played + 1, 999, 2).insertCheckboxes();
   req.getRange(2, RQ.at + 1, 999, 1).setNumberFormat('ddd h:mm am/pm');
@@ -394,7 +425,6 @@ function setup() {
   set.setColumnWidth(2, 220);
   set.setColumnWidth(3, 420);
   bustCache_();
-  return 'ok';
 }
 
 // ------------------------------------------------------------------ helpers
@@ -406,19 +436,36 @@ function ensureSheet_(ss, name, headers) {
   return sh;
 }
 
+// the spreadsheet: the bound one, else the one this script created (Script property SHEET_ID), else a new one
+var SS_ = null;
+function ss_() {
+  if (SS_) return SS_;
+  try { SS_ = SpreadsheetApp.getActiveSpreadsheet(); } catch (ignored) {}
+  if (SS_) return SS_;
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('SHEET_ID');
+  if (id) {
+    try { SS_ = SpreadsheetApp.openById(id); } catch (ignored) { SS_ = null; }
+    if (SS_) return SS_;
+  }
+  SS_ = SpreadsheetApp.create('Pawsessed Lagoon · requests & raffle');
+  props.setProperty('SHEET_ID', SS_.getId());
+  setupSheets_(SS_);
+  return SS_;
+}
+
 function sheet_(name) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = ss_();
   var sh = ss.getSheetByName(name);
   if (!sh) {
-    setup();
+    setupSheets_(ss);
     sh = ss.getSheetByName(name);
   }
   return sh;
 }
 
 function readRows_(name, width) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName(name);
+  var sh = ss_().getSheetByName(name);
   if (!sh) return [];
   var last = sh.getLastRow();
   if (last < 2) return [];
