@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pawsessed Lagoon · Room 7416 · AquatiFur 2026</title>
+<meta name="description" content="Pawsessed Lagoon — Vortex's AquatiFur party. Room 7416 · Golf Villas building D, 4th floor · Fri–Sun Oct 9–11 · 8PM–2AM · 18+.">
+<meta name="theme-color" content="#0a1838">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pawsessed Lagoon · Room 7416">
+<meta property="og:description" content="Golf Villas building D, 4th floor · Fri–Sun 8PM–2AM · full bar, free drinks, live DJs · 18+">
+<meta property="og:image" content="https://frosty884.github.io/pawsessed/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://frosty884.github.io/pawsessed/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="preload" href="fonts/fredoka-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/fredoka-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/config.js"></script>
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+
+<!-- night sky behind everything -->
+<div class="sky" aria-hidden="true">
+  <div class="sky-img"></div>
+  <div class="stars"></div>
+  <div class="moon"><span class="moon-bat a"></span><span class="moon-bat b"></span></div>
+  <div class="wisps"><i></i><i></i><i></i><i></i><i></i></div>
+</div>
+
+<!-- slim bar that keeps the room number on screen once you scroll -->
+<a class="roombar" id="roombar" href="#find" aria-label="Room 7416, Golf Villas building D, 4th floor. Show directions.">
+  <span class="roombar-pin">📍</span>
+  <span><b>Room 7416</b> · Villa D · 4th floor</span>
+  <span class="roombar-go">Map</span>
+</a>
+
+<main>
+
+<!-- ============================================================ HERO -->
+<section class="hero" id="top">
+  <img class="float-ghost g1" src="assets/ghost-lean.webp" alt="" width="186" height="185">
+  <img class="float-ghost g2" src="assets/ghost-wave.webp" alt="" width="200" height="176">
+
+  <h1 class="logo" aria-label="Pawsessed Lagoon — an AquatiFur party">
+    <svg class="logo-ring" viewBox="10 15 610 505" aria-hidden="true">
+      <path class="tube" d="M356.05 485.11A215.75 215.75 0 1 1 271.74 76.25"/>
+      <path class="neon" d="M356.05 485.11A215.75 215.75 0 1 1 271.74 76.25"/>
+      <path class="core" d="M356.05 485.11A215.75 215.75 0 1 1 271.74 76.25"/>
+    </svg>
+    <img class="l-palm" src="assets/logo_palm.webp" alt="" style="--x:267;--y:23;--w:242">
+    <img class="l-bat b0" src="assets/logo_bat0.webp" alt="" style="--x:19;--y:127;--w:113">
+    <img class="l-bat b1" src="assets/logo_bat1.webp" alt="" style="--x:21;--y:202;--w:75">
+    <img class="l-bat b2" src="assets/logo_bat2.webp" alt="" style="--x:94;--y:217;--w:81">
+    <span class="l-paw-wrap" style="--x:70;--y:183;--w:374">
+      <img class="l-paw split c" src="assets/logo_paw.webp" alt="">
+      <img class="l-paw split m" src="assets/logo_paw.webp" alt="">
+      <img class="l-paw" src="assets/logo_paw.webp" alt="">
+    </span>
+    <img class="l-lagoon" src="assets/logo_lagoon.webp" alt="" style="--x:158;--y:326;--w:276">
+    <span class="l-aqua-wrap" style="--x:356;--y:400;--w:252">
+      <img class="l-aqua" src="assets/logo_aqua.webp" alt="">
+    </span>
+  </h1>
+
+  <p class="status" id="status" data-state="soon"><span class="dot"></span><span id="status-text">Fri · Sat · Sun · 8PM–2AM</span></p>
+
+  <div class="room-card">
+    <p class="room-kicker">the party is in</p>
+    <p class="room"><span class="room-word">ROOM</span><span class="room-num" id="room-num">7416</span></p>
+    <p class="room-where">Golf Villas · <b>Building D</b> · <b>4th floor</b></p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#find">🧭 Directions</a>
+      <a class="btn btn-tg" href="https://t.me/vortexofficalpartychat" target="_blank" rel="noopener">
+        <svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="120" fill="#2aabee"/><path fill="#fff" d="M54.3 118.8c35-15.2 58.3-25.3 70-30.2 33.3-13.9 40.3-16.3 44.8-16.4 1 0 3.2.2 4.7 1.4 1.2 1 1.5 2.3 1.7 3.3s.4 3.1.2 4.7c-1.8 19-9.6 65.1-13.6 86.3-1.7 9-5 12-8.2 12.3-7 .6-12.3-4.6-19-9-10.6-6.9-16.5-11.2-26.8-18-11.9-7.8-4.2-12.1 2.6-19.1 1.8-1.8 32.5-29.8 33.1-32.3.1-.3.1-1.5-.6-2.1-.7-.6-1.7-.4-2.5-.2-1.1.2-17.9 11.4-50.6 33.5-4.8 3.3-9.1 4.9-13 4.8-4.3-.1-12.5-2.4-18.7-4.4-7.5-2.4-13.5-3.7-13-7.9.3-2.2 3.3-4.4 8.9-6.7z"/></svg>
+        Party chat</a>
+    </div>
+  </div>
+
+  <p class="when"><b>Fri · Sat · Sun</b> <span>Oct 9–11</span> <b class="hours">8PM–2AM</b></p>
+  <p class="age"><span class="pill">18+ party</span> <span class="pill pill-yellow">21+ w/ ID to drink</span></p>
+
+  <button class="peek" id="peek" type="button" aria-label="Show the party loop full screen">
+    <span class="peek-thumb"><img src="media/poster.jpg" alt="" loading="lazy" width="540" height="1212"></span>
+    <span class="peek-text"><b>Show the party loop</b><small>full screen · great for showing friends</small></span>
+    <span class="peek-icon" aria-hidden="true">⤢</span>
+  </button>
+</section>
+
+<div class="notice" id="notice" role="status" hidden></div>
+
+<!-- ============================================================ FIND US -->
+<section class="section" id="find">
+  <p class="kicker">find the party</p>
+  <h2>Golf Villa <span class="hl">D</span>, 4th floor</h2>
+  <p class="lede">The Golf Villas are across the road from the main hotel, along the golf course. Building <b>D</b> is the last one.</p>
+
+  <figure class="map-card reveal">
+    <svg class="map" id="map" viewBox="0 0 1000 1100" role="img" aria-labelledby="map-title map-desc">
+      <title id="map-title">Walking route from the hotel front desk to Golf Villas building D</title>
+      <desc id="map-desc">Leave the main hotel by the Hotel Front Desk entrance, walk down the drive and turn right onto the main road, follow the villa road past Golf Villas A, C and B, and keep going to building D at the end. The party is on the 4th floor in room 7416.</desc>
+      <defs>
+        <pattern id="stalls" width="26" height="40" patternUnits="userSpaceOnUse">
+          <rect width="26" height="40" fill="#221d36"/><path d="M0 0V40" stroke="#4b4468" stroke-width="2"/>
+        </pattern>
+        <pattern id="windows" width="22" height="20" patternUnits="userSpaceOnUse">
+          <rect width="22" height="20" fill="none"/><rect x="5" y="5" width="8" height="8" rx="1.5" fill="#ffd46b" opacity=".85"/>
+        </pattern>
+        <radialGradient id="pinGlow"><stop offset="0" stop-color="#ff7ad9" stop-opacity=".75"/><stop offset="1" stop-color="#ff7ad9" stop-opacity="0"/></radialGradient>
+        <filter id="neon" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <symbol id="tree" viewBox="-12 -12 24 24"><circle r="11" fill="#1c4d36"/><circle r="11" fill="none" stroke="#123526" stroke-width="2"/><circle cx="-3" cy="-3" r="4" fill="#2b6b4c"/></symbol>
+        <symbol id="car" viewBox="0 0 14 24"><rect width="14" height="24" rx="4" fill="currentColor"/><rect x="2" y="5" width="10" height="6" rx="2" fill="#0b1630" opacity=".55"/></symbol>
+      </defs>
+
+      <!-- ground, golf course, water -->
+      <rect width="1000" height="1100" fill="#14301f"/>
+      <path d="M0 470 C 160 520 330 470 520 395 L 1000 230 L 1000 1100 L 0 1100 Z" fill="#1a3d28"/>
+      <path class="fairway" d="M40 640 C 190 600 330 560 470 520 C 560 600 520 700 600 760 C 520 850 360 900 220 960 C 120 1000 40 960 20 880 Z" fill="#24573a"/>
+      <path class="fairway" d="M560 960 C 610 930 640 1010 620 1060 C 590 1090 520 1080 520 1040 Z" fill="#24573a"/>
+      <ellipse cx="300" cy="700" rx="62" ry="30" fill="#c9b47a" opacity=".55"/>
+      <ellipse cx="420" cy="640" rx="40" ry="20" fill="#c9b47a" opacity=".5"/>
+      <ellipse cx="510" cy="830" rx="48" ry="24" fill="#c9b47a" opacity=".45"/>
+      <path class="pond" d="M60 780 C 120 740 200 760 230 800 C 260 850 190 900 120 890 C 50 880 20 820 60 780 Z" fill="#1d6c9a"/>
+      <path d="M95 812h40M150 840h44M110 862h30" stroke="#8fe3ff" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+      <circle cx="650" cy="640" r="30" fill="#2f7a4c" opacity=".7"/><path d="M650 640v-34" stroke="#f7fbff" stroke-width="3"/><path d="M650 606l20 7-20 7z" fill="#ff7ad9"/>
+      <!-- river along the top -->
+      <path d="M0 0H1000V52C 900 70 820 40 720 58 C 600 80 520 46 420 60 C 300 76 200 48 0 64Z" fill="#1b4f7a"/>
+      <path d="M90 34h70M300 28h60M520 36h80M760 26h70M880 40h50" stroke="#8fe3ff" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+
+      <!-- roads -->
+      <g class="roads" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M-20 618 C 150 560 380 470 575 372 C 680 320 820 262 1020 210" stroke="#3a3452" stroke-width="40"/>
+        <path d="M262 352 C 266 420 276 480 292 548" stroke="#3a3452" stroke-width="30"/>
+        <path d="M575 372 C 650 410 730 470 790 540 C 830 600 820 680 770 735 C 735 770 735 800 770 830 C 800 850 840 860 880 860" stroke="#3a3452" stroke-width="30"/>
+        <path d="M-20 618 C 150 560 380 470 575 372 C 680 320 820 262 1020 210" stroke="#8a83a8" stroke-width="2.5" stroke-dasharray="16 16"/>
+        <path d="M575 372 C 650 410 730 470 790 540 C 830 600 820 680 770 735 C 735 770 735 800 770 830 C 800 850 840 860 880 860" stroke="#8a83a8" stroke-width="2" stroke-dasharray="12 14"/>
+      </g>
+
+      <!-- parking -->
+      <g>
+        <rect x="420" y="215" width="270" height="110" rx="14" fill="url(#stalls)" transform="rotate(-18 555 270)"/>
+        <rect x="600" y="430" width="200" height="56" rx="12" fill="url(#stalls)" transform="rotate(36 700 458)"/>
+        <rect x="770" y="772" width="150" height="54" rx="12" fill="url(#stalls)" transform="rotate(10 845 800)"/>
+        <g color="#5a7ad8"><use href="#car" x="470" y="248" width="14" height="24" transform="rotate(-18 477 260)"/><use href="#car" x="540" y="232" width="14" height="24" transform="rotate(-18 547 244)"/></g>
+        <g color="#d8506a"><use href="#car" x="610" y="214" width="14" height="24" transform="rotate(-18 617 226)"/><use href="#car" x="812" y="786" width="14" height="24" transform="rotate(10 819 798)"/></g>
+        <g color="#e6c45a"><use href="#car" x="850" y="790" width="14" height="24" transform="rotate(10 857 802)"/><use href="#car" x="700" y="455" width="14" height="24" transform="rotate(36 707 467)"/></g>
+        <text class="map-label small" x="835" y="760" text-anchor="middle">Villa parking</text>
+      </g>
+
+      <!-- main hotel (simplified from the resort map) -->
+      <g class="hotel">
+        <path d="M-10 92 L 520 70 L 535 300 L -10 330 Z" fill="#3c1830"/>
+        <path d="M-10 92 L 520 70 L 528 112 L -10 136 Z" fill="#5a2340"/>
+        <rect x="20" y="150" width="480" height="150" fill="url(#windows)" opacity=".9" transform="skewY(-2.4)"/>
+        <path d="M560 60 L 760 52 L 768 230 L 566 238 Z" fill="#3c1830"/>
+        <rect x="580" y="90" width="170" height="130" fill="url(#windows)" opacity=".8" transform="skewY(-2.4)"/>
+        <text class="map-label" x="250" y="210" text-anchor="middle">Main hotel</text>
+        <text class="map-label small" x="664" y="150" text-anchor="middle">Guest rooms</text>
+        <text class="map-label small" x="664" y="172" text-anchor="middle">3001–3621</text>
+      </g>
+
+      <!-- outdoor waterpark on the left edge -->
+      <g>
+        <path d="M-10 395 C 60 380 120 410 130 450 C 140 500 90 540 30 548 L -10 550 Z" fill="#1d6c9a"/>
+        <path d="M10 430 C 40 420 80 440 70 470" stroke="#8fe3ff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".6"/>
+        <text class="map-label small" x="14" y="590">← waterparks</text>
+      </g>
+
+      <!-- trees -->
+      <g class="trees">
+        <use href="#tree" x="330" y="330" width="26" height="26"/><use href="#tree" x="370" y="350" width="22" height="22"/>
+        <use href="#tree" x="440" y="410" width="26" height="26"/><use href="#tree" x="520" y="440" width="24" height="24"/>
+        <use href="#tree" x="840" y="520" width="28" height="28"/><use href="#tree" x="880" y="600" width="26" height="26"/>
+        <use href="#tree" x="870" y="690" width="30" height="30"/><use href="#tree" x="940" y="880" width="30" height="30"/>
+        <use href="#tree" x="950" y="980" width="28" height="28"/><use href="#tree" x="620" y="1040" width="26" height="26"/>
+        <use href="#tree" x="160" y="560" width="24" height="24"/><use href="#tree" x="700" y="330" width="22" height="22"/>
+        <use href="#tree" x="760" y="300" width="26" height="26"/><use href="#tree" x="930" y="300" width="26" height="26"/>
+        <use href="#tree" x="380" y="760" width="24" height="24"/><use href="#tree" x="250" y="1010" width="26" height="26"/>
+      </g>
+
+      <!-- golf villas A, C, B -->
+      <g class="villas">
+        <g transform="rotate(36 670 540)">
+          <rect x="560" y="505" width="230" height="70" rx="6" fill="#7a2f22"/>
+          <path d="M560 505 L 600 482 L 750 482 L 790 505 Z" fill="#c8563a"/>
+          <rect x="566" y="516" width="218" height="52" fill="url(#windows)" opacity=".75"/>
+          <path d="M637 500V575M713 500V575" stroke="#3c1612" stroke-width="3"/>
+        </g>
+        <text class="map-label" x="560" y="630">Golf Villas A · C · B</text>
+      </g>
+
+      <!-- golf villa D: the party building -->
+      <g class="villa-d" id="villa-d">
+        <ellipse cx="790" cy="945" rx="190" ry="95" fill="url(#pinGlow)" class="glow"/>
+        <g transform="rotate(22 790 945)">
+          <rect x="660" y="905" width="270" height="86" rx="8" fill="#8a3324"/>
+          <path d="M660 905 L 705 876 L 885 876 L 930 905 Z" fill="#e07a4f"/>
+          <rect x="667" y="918" width="256" height="66" fill="url(#windows)"/>
+          <path d="M750 900V990M840 900V990" stroke="#3c1612" stroke-width="3"/>
+          <rect class="d-outline" x="652" y="868" width="286" height="132" rx="12" fill="none" stroke="#ff7ad9" stroke-width="5"/>
+        </g>
+        <text class="map-label big" x="690" y="1060">Golf Villa D</text>
+      </g>
+
+      <!-- walking route -->
+      <path id="route" class="route" d="M262 360 C 266 420 276 480 292 548 C 400 500 490 430 575 380 C 650 416 730 470 788 540 C 828 600 818 680 770 732 C 736 770 738 800 772 830 C 790 846 800 860 790 890" fill="none"/>
+      <g id="paws"></g>
+
+      <!-- start + finish -->
+      <g class="start">
+        <circle cx="262" cy="350" r="22" fill="#ffe014" stroke="#1d0b3a" stroke-width="4"/>
+        <text x="262" y="358" text-anchor="middle" class="map-step">1</text>
+        <g transform="translate(262 300)">
+          <rect x="-118" y="-30" width="236" height="44" rx="22" fill="#1d0b3a" stroke="#ffe014" stroke-width="3"/>
+          <text y="1" text-anchor="middle" class="map-label">Hotel Front Desk</text>
+        </g>
+      </g>
+      <g class="step2"><circle cx="575" cy="380" r="22" fill="#ffe014" stroke="#1d0b3a" stroke-width="4"/><text x="575" y="388" text-anchor="middle" class="map-step">2</text></g>
+      <g class="pin" id="pin">
+        <circle cx="790" cy="890" r="22" fill="#ffe014" stroke="#1d0b3a" stroke-width="4"/>
+        <text x="790" y="898" text-anchor="middle" class="map-step">3</text>
+        <g class="pin-bubble">
+          <path d="M790 846 l-14 -18 h-130 a22 22 0 0 1 -22 -22 v-72 a22 22 0 0 1 22 -22 h288 a22 22 0 0 1 22 22 v72 a22 22 0 0 1 -22 22 h-130 z" fill="#ff3fa4" stroke="#1d0b3a" stroke-width="4"/>
+          <text x="790" y="756" text-anchor="middle" class="pin-room">7416</text>
+          <text x="790" y="796" text-anchor="middle" class="pin-floor">4th floor</text>
+        </g>
+      </g>
+      <text class="map-note" x="20" y="1086">not to scale · based on the Chula Vista resort map</text>
+    </svg>
+  </figure>
+
+  <ol class="steps reveal">
+    <li><span class="step-n">1</span><div><b>Start at the Hotel Front Desk</b> (main hotel lobby) and head out the front.</div></li>
+    <li><span class="step-n">2</span><div><b>Walk down the drive and turn right,</b> then follow the road to the Golf Villas, past villas <b>A, C and B</b>.</div></li>
+    <li><span class="step-n">3</span><div><b>Keep going to building D</b>, the last villa by Villa Parking. Up to the <b>4th floor</b>, <b>Room 7416</b>. Follow the bass 🔊</div></li>
+  </ol>
+  <div class="btn-row reveal">
+    <a class="btn btn-glass" href="https://www.google.com/maps/search/?api=1&query=Chula+Vista+Golf+Villas+2504+River+Rd+Wisconsin+Dells+WI+53965" target="_blank" rel="noopener">🗺️ Open in Google Maps</a>
+    <button class="btn btn-glass" type="button" data-copy="Room 7416 · Chula Vista Golf Villas, building D, 4th floor · 2504 River Rd, Wisconsin Dells, WI 53965">📋 Copy address</button>
+  </div>
+  <p class="fine">Driving in? Park in the Villa Parking lot right outside building D. Lost? Ask in the <a href="https://t.me/vortexofficalpartychat" target="_blank" rel="noopener">party chat</a>.</p>
+</section>
+
+<!-- ============================================================ THE PARTY -->
+<section class="section" id="party">
+  <p class="kicker">the party</p>
+  <h2>Drinks, tunes & spooky beach vibes</h2>
+  <div class="party-grid">
+    <ul class="offer reveal">
+      <li><span>🍹</span>Full bar</li>
+      <li class="free"><span>🎁</span>Free drinks</li>
+      <li><span>🍕</span>Food</li>
+      <li><span>🎧</span>Live DJs</li>
+      <li><span>🎃</span>Activities</li>
+      <li class="raffle-line"><span>👕</span><a href="#raffle">Mystery T&#8209;shirt raffle</a></li>
+    </ul>
+    <img class="party-hero reveal" src="assets/hero.webp" alt="Pawsessed Lagoon mascot holding a jack-o'-lantern, art by Ming-Yan" width="640" height="892" loading="lazy">
+  </div>
+
+  <div class="lineup reveal">
+    <h3>DJ lineup</h3>
+    <p class="now" id="now-spinning" hidden><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span> Now spinning: <b id="now-dj"></b></p>
+    <ul class="djs">
+      <li data-dj="Vortex Fox"><span class="dj-name">Vortex Fox</span><span class="dj-sub">your host 🦊</span></li>
+      <li data-dj="Frosty"><a href="https://www.instagram.com/frostyxlr8" target="_blank" rel="noopener"><span class="dj-name">Frosty</span><span class="dj-sub">@frostyxlr8</span></a></li>
+      <li data-dj="Ming-Yan"><a href="https://www.instagram.com/jayk_mingyan" target="_blank" rel="noopener"><span class="dj-name">Ming-Yan</span><span class="dj-sub">@jayk_mingyan</span></a></li>
+      <li data-dj="Bunitsi"><a href="https://www.instagram.com/bunitsi" target="_blank" rel="noopener"><span class="dj-name">Bunitsi</span><span class="dj-sub">@bunitsi</span></a></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ DONATE -->
+<section class="section" id="donate">
+  <p class="kicker">tip the host</p>
+  <h2>Help Vortex keep the party epic 💖</h2>
+  <div class="donate-card reveal">
+    <blockquote>
+      <p>Hello beans, are you excited to party till your paws fall off?</p>
+      <p>It means the world to me to host and put on these epic parties for you every year. If you ever feel like donating a few dollars to help make the party even more epic and provide more supplies, there is never any expectation, but it would help out a lot and mean the world to me.</p>
+      <footer>— Vortex Fox, your host</footer>
+    </blockquote>
+    <p class="donate-why">The drinks are free and the raffle tee is on the house, so if you're having fun, chip in a few bucks for the supplies.</p>
+    <div class="pay">
+      <a class="pay-btn paypal" href="https://www.paypal.me/chaostheyeen" target="_blank" rel="noopener"><b>PayPal</b><small>chaostheyeen</small></a>
+      <a class="pay-btn cashapp" href="https://cash.app/$Damienp109" target="_blank" rel="noopener"><b>Cash App</b><small>$Damienp109</small></a>
+      <a class="pay-btn venmo" href="https://venmo.com/u/vortexthefox" target="_blank" rel="noopener"><b>Venmo</b><small>@vortexthefox</small></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SONG REQUESTS -->
+<section class="section" id="requests">
+  <p class="kicker">song requests</p>
+  <h2>Ask the DJ for a track</h2>
+  <p class="disclaimer reveal"><b>Heads up:</b> song choice is always up to the DJ. They might not be taking requests, might work your song in their own way or take a while to transition into it, or might have a different idea for the vibe of the party. Thanks for being cool 💜</p>
+
+  <div class="card reveal">
+    <form class="req-form" id="req-form" autocomplete="off" novalidate>
+      <label>Song title<input name="title" maxlength="100" required placeholder="e.g. Sandstorm"></label>
+      <label>Artist<input name="artist" maxlength="100" required placeholder="e.g. Darude"></label>
+      <label>Your name or @<input name="by" maxlength="40" required placeholder="so the DJ knows who asked"></label>
+      <button class="btn btn-primary" type="submit">🎶 Send request</button>
+      <p class="form-msg" id="req-msg" role="status" aria-live="polite"></p>
+    </form>
+    <div class="offline" id="req-offline" hidden>Requests open when the party starts. Check back soon!</div>
+  </div>
+
+  <div class="queue-card card reveal">
+    <div class="queue-head">
+      <h3>Up next <span class="count" id="queue-count"></span></h3>
+      <span class="live" id="live"><i></i>live</span>
+    </div>
+    <p class="paused" id="req-paused" hidden>⏸️ The DJ has paused requests for now.</p>
+    <ol class="queue" id="queue" aria-live="polite"></ol>
+    <p class="empty" id="queue-empty">No requests yet. Be the first!</p>
+    <details class="played-wrap" id="played-wrap" hidden>
+      <summary>Recently played</summary>
+      <ol class="played" id="played"></ol>
+    </details>
+  </div>
+</section>
+
+<!-- ============================================================ RAFFLE -->
+<section class="section" id="raffle">
+  <p class="kicker">raffle</p>
+  <h2>Win the mystery T-shirt 👕</h2>
+  <p class="lede">Follow these five, then drop your @ below. One winner gets drawn at the party.</p>
+  <div class="winner" id="winner" hidden></div>
+
+  <ol class="follows reveal" id="follows">
+    <li><a href="https://www.instagram.com/projectunknownvr" target="_blank" rel="noopener" data-follow="projectunknownvr"><span class="f-name">Project Unknown</span><span class="f-sub">VR / hybrid radio rave · @projectunknownvr</span><span class="f-check" aria-hidden="true"></span></a></li>
+    <li><a href="https://www.instagram.com/greenlinechicago" target="_blank" rel="noopener" data-follow="greenlinechicago"><span class="f-name">Greenline</span><span class="f-sub">Chicago furry raves · @greenlinechicago</span><span class="f-check" aria-hidden="true"></span></a></li>
+    <li><a href="https://www.instagram.com/frostyxlr8" target="_blank" rel="noopener" data-follow="frostyxlr8"><span class="f-name">Frosty</span><span class="f-sub">DJ · @frostyxlr8</span><span class="f-check" aria-hidden="true"></span></a></li>
+    <li><a href="https://www.instagram.com/bunitsi" target="_blank" rel="noopener" data-follow="bunitsi"><span class="f-name">Bunitsi</span><span class="f-sub">DJ · @bunitsi</span><span class="f-check" aria-hidden="true"></span></a></li>
+    <li><a href="https://www.instagram.com/jayk_mingyan" target="_blank" rel="noopener" data-follow="jayk_mingyan"><span class="f-name">Ming-Yan</span><span class="f-sub">DJ · @jayk_mingyan</span><span class="f-check" aria-hidden="true"></span></a></li>
+  </ol>
+  <p class="follow-progress" id="follow-progress">0 of 5 followed</p>
+
+  <div class="card reveal">
+    <form class="raffle-form" id="raffle-form" autocomplete="off" novalidate>
+      <label>Your @<input name="handle" maxlength="40" required placeholder="@yourname" autocapitalize="off" spellcheck="false"></label>
+      <fieldset class="platform">
+        <legend>Where can we reach you?</legend>
+        <label><input type="radio" name="platform" value="instagram" checked><span>Instagram</span></label>
+        <label><input type="radio" name="platform" value="telegram"><span>Telegram</span></label>
+      </fieldset>
+      <button class="btn btn-primary" type="submit">🎟️ Enter the raffle</button>
+      <p class="form-msg" id="raffle-msg" role="status" aria-live="polite"></p>
+    </form>
+    <div class="ticket" id="ticket" hidden></div>
+    <div class="offline" id="raffle-offline" hidden>Raffle entries open soon. Check back!</div>
+  </div>
+  <p class="fine center" id="raffle-count"></p>
+</section>
+
+<!-- ============================================================ COMMUNITY -->
+<section class="section" id="community">
+  <p class="kicker">hang out with us</p>
+  <h2>Chats, streams & raves</h2>
+  <a class="tg-card reveal" href="https://t.me/vortexofficalpartychat" target="_blank" rel="noopener">
+    <svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="120" fill="#2aabee"/><path fill="#fff" d="M54.3 118.8c35-15.2 58.3-25.3 70-30.2 33.3-13.9 40.3-16.3 44.8-16.4 1 0 3.2.2 4.7 1.4 1.2 1 1.5 2.3 1.7 3.3s.4 3.1.2 4.7c-1.8 19-9.6 65.1-13.6 86.3-1.7 9-5 12-8.2 12.3-7 .6-12.3-4.6-19-9-10.6-6.9-16.5-11.2-26.8-18-11.9-7.8-4.2-12.1 2.6-19.1 1.8-1.8 32.5-29.8 33.1-32.3.1-.3.1-1.5-.6-2.1-.7-.6-1.7-.4-2.5-.2-1.1.2-17.9 11.4-50.6 33.5-4.8 3.3-9.1 4.9-13 4.8-4.3-.1-12.5-2.4-18.7-4.4-7.5-2.4-13.5-3.7-13-7.9.3-2.2 3.3-4.4 8.9-6.7z"/></svg>
+    <span><b>Vortex Party Chat</b><small>room updates, pics & after-party plans · t.me/vortexofficalpartychat</small></span>
+    <span class="arrow">→</span>
+  </a>
+  <div class="yt reveal">
+    <button class="yt-facade" id="yt" type="button" data-id="1Epjf6QPPVg" aria-label="Play Project Unknown video">
+      <img src="https://i.ytimg.com/vi/1Epjf6QPPVg/hqdefault.jpg" alt="" loading="lazy" width="480" height="360">
+      <span class="yt-play" aria-hidden="true"></span>
+      <span class="yt-title">Watch Project Unknown</span>
+    </button>
+  </div>
+  <div class="link-grid reveal">
+    <a class="link-tile" href="https://discord.gg/FEgetx42c9" target="_blank" rel="noopener"><b>Project Unknown Discord</b><small>the VR / radio rave crew</small></a>
+    <a class="link-tile" href="https://www.youtube.com/@frostysnowballz" target="_blank" rel="noopener"><b>Frosty on YouTube</b><small>@frostysnowballz</small></a>
+    <a class="link-tile" href="https://linktr.ee/puvr" target="_blank" rel="noopener"><b>Project Unknown links</b><small>linktr.ee/puvr</small></a>
+    <a class="link-tile" href="https://www.instagram.com/greenlinechicago" target="_blank" rel="noopener"><b>Greenline</b><small>Chicago furry raves</small></a>
+  </div>
+</section>
+
+<!-- ============================================================ PAST FLYERS -->
+<section class="section" id="flyers">
+  <p class="kicker">from the archive</p>
+  <h2>Past parties</h2>
+  <div class="flyer-strip reveal" id="flyer-strip" tabindex="0" aria-label="Past party flyers, scroll sideways">
+    <button class="flyer" data-i="0"><img src="assets/flyers/pawsessed-lagoon.jpg" alt="Pawsessed Lagoon flyer" loading="lazy" width="720" height="900"><span><b>Pawsessed Lagoon</b>this weekend</span></button>
+    <button class="flyer" data-i="1"><img src="assets/flyers/vortex-denfur.jpg" alt="Come Party with Vortex at DenFur flyer" loading="lazy" width="507" height="900"><span><b>Come Party with Vortex</b>DenFur 2026</span></button>
+    <button class="flyer" data-i="2"><img src="assets/flyers/magia.jpg" alt="Magia afterparty banner" loading="lazy" width="1050" height="600"><span><b>Magia</b>Anime Magic Con · Aug 22</span></button>
+    <button class="flyer" data-i="3"><img src="assets/flyers/waifu4laifu.jpg" alt="waifu4laifu party flyer" loading="lazy" width="498" height="900"><span><b>waifu4laifu</b>Anime Midwest · July 4</span></button>
+    <button class="flyer" data-i="4"><img src="assets/flyers/freakend.jpg" alt="Freakend flyer" loading="lazy" width="720" height="900"><span><b>Freakend</b>May 9</span></button>
+    <button class="flyer" data-i="5"><img src="assets/flyers/furry-pop-up.jpg" alt="Furry Pop-Up Night flyer" loading="lazy" width="720" height="900"><span><b>Furry Pop-Up Night</b>Miss Egg Roll, Chicago</span></button>
+    <button class="flyer" data-i="6"><img src="assets/flyers/pu-s2e9.jpg" alt="Project Unknown S2E9 flyer" loading="lazy" width="720" height="900"><span><b>Project Unknown S2E9</b>Mar 15</span></button>
+    <button class="flyer" data-i="7"><img src="assets/flyers/pu-s2e8.jpg" alt="Project Unknown S2E8 flyer" loading="lazy" width="720" height="900"><span><b>Project Unknown S2E8</b>Mar 1</span></button>
+    <button class="flyer" data-i="8"><img src="assets/flyers/synergy.jpg" alt="Greenline and Project Unknown Synergy flyer" loading="lazy" width="720" height="900"><span><b>Synergy</b>Greenline × Project Unknown · Feb 28</span></button>
+    <button class="flyer" data-i="9"><img src="assets/flyers/pu-s2e6.jpg" alt="Project Unknown S2E6 flyer" loading="lazy" width="600" height="750"><span><b>Project Unknown S2E6</b>Jan 25</span></button>
+    <button class="flyer" data-i="10"><img src="assets/flyers/pu-s2e2.jpg" alt="Project Unknown S2E2 flyer" loading="lazy" width="600" height="750"><span><b>Project Unknown S2E2</b>Dec 14, 2025</span></button>
+    <button class="flyer" data-i="11"><img src="assets/flyers/vortex-aqf-2025.jpg" alt="Run It Up, Turbo flyer from AquatiFur 2025" loading="lazy" width="600" height="900"><span><b>Run It Up, Turbo</b>Vortex @ AquatiFur 2025</span></button>
+  </div>
+</section>
+
+<!-- ============================================================ SHARE -->
+<section class="section" id="share">
+  <p class="kicker">spread the word</p>
+  <h2>Share the party loop</h2>
+  <p class="lede">Post it in your chats or stories. It has the QR code to the party chat built in.</p>
+  <div class="share-card reveal">
+    <div class="share-media">
+      <video id="share-video" muted loop playsinline preload="none" poster="media/poster.jpg" width="540" height="1212">
+        <source src="media/pawsessed-lagoon.mp4" type="video/mp4">
+      </video>
+      <button class="fs-btn" type="button" data-open-viewer aria-label="Full screen">⤢ Full screen</button>
+    </div>
+    <div class="share-actions">
+      <button class="btn btn-primary" type="button" id="share-btn">📤 Share</button>
+      <a class="btn btn-glass" href="media/pawsessed-lagoon.gif" download="pawsessed-lagoon.gif">⬇️ GIF</a>
+      <a class="btn btn-glass" href="media/pawsessed-lagoon.mp4" download="pawsessed-lagoon.mp4">⬇️ Video for Telegram</a>
+      <a class="btn btn-glass" href="media/pawsessed-lagoon-story.mp4" download="pawsessed-lagoon-story.mp4">⬇️ Instagram story</a>
+      <p class="fine">Telegram squishes GIFs into a blurry mini clip, so send the video version there. It still loops like a GIF.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <p><b>Pawsessed Lagoon</b> · an AquatiFur 2026 party hosted by Vortex Fox · 18+</p>
+  <p>Chula Vista Resort · Golf Villas D · Room 7416</p>
+  <p class="fine">Flyer & mascot art by Ming-Yan · site by Frosty & Greenline</p>
+  <button class="dj-link" type="button" id="dj-open">🎧 DJ login</button>
+</footer>
+</main>
+
+<!-- full-screen promo viewer -->
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Party loop">
+  <video id="viewer-video" muted loop playsinline preload="none" poster="media/poster.jpg">
+    <source src="media/pawsessed-lagoon.mp4" type="video/mp4">
+  </video>
+  <button class="viewer-close" type="button" id="viewer-close" aria-label="Close">✕</button>
+</div>
+
+<!-- flyer lightbox -->
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Flyer">
+  <img id="lightbox-img" alt="">
+  <p id="lightbox-cap"></p>
+  <button class="lb-prev" type="button" aria-label="Previous flyer">‹</button>
+  <button class="lb-next" type="button" aria-label="Next flyer">›</button>
+  <button class="lb-close" type="button" aria-label="Close">✕</button>
+</div>
+
+<!-- DJ portal -->
+<div class="modal" id="dj-modal" hidden role="dialog" aria-modal="true" aria-labelledby="dj-title">
+  <div class="modal-card">
+    <button class="modal-x" type="button" data-close aria-label="Close">✕</button>
+    <h3 id="dj-title">🎧 DJ portal</h3>
+    <form id="dj-form" class="dj-form">
+      <label>Password<input type="password" name="password" autocomplete="current-password" required></label>
+      <button class="btn btn-primary" type="submit">Log in</button>
+      <p class="form-msg" id="dj-msg" role="status"></p>
+    </form>
+    <div class="dj-panel" id="dj-panel" hidden>
+      <p class="fine">You can remove ✕ or mark ✓ played on any request in the queue. Ticking <b>Played</b> in the Google Sheet works too.</p>
+      <label class="switch"><input type="checkbox" id="dj-open-req"><span>Taking requests</span></label>
+      <label class="switch"><input type="checkbox" id="dj-open-raffle"><span>Raffle entries open</span></label>
+      <label>Now spinning
+        <select id="dj-now"><option value="">(nobody shown)</option><option>Vortex Fox</option><option>Frosty</option><option>Ming-Yan</option><option>Bunitsi</option></select>
+      </label>
+      <label>Announcement banner<input id="dj-notice" maxlength="160" placeholder="e.g. Pizza's here! 🍕"></label>
+      <div class="btn-row">
+        <button class="btn btn-primary" type="button" id="dj-save">Save</button>
+        <button class="btn btn-glass" type="button" id="dj-clear">Clear queue</button>
+        <button class="btn btn-glass" type="button" id="dj-logout">Log out</button>
+      </div>
+      <p class="form-msg" id="dj-panel-msg" role="status"></p>
+    </div>
+  </div>
+</div>
+
+<div class="dj-bar" id="dj-bar" hidden><span>🎧 DJ mode</span><button type="button" id="dj-bar-open">Settings</button></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+</body>
+</html>

@@ -1,0 +1,86 @@
+[
+ {
+  "src": "assets/flyers/pawsessed-lagoon.jpg",
+  "w": 720,
+  "h": 900,
+  "title": "Pawsessed Lagoon",
+  "when": "AquatiFur 2026 \u00b7 this weekend"
+ },
+ {
+  "src": "assets/flyers/vortex-denfur.jpg",
+  "w": 507,
+  "h": 900,
+  "title": "Come Party with Vortex",
+  "when": "DenFur 2026"
+ },
+ {
+  "src": "assets/flyers/magia.jpg",
+  "w": 1050,
+  "h": 600,
+  "title": "Magia",
+  "when": "Anime Magic Con afterparty \u00b7 Aug 22"
+ },
+ {
+  "src": "assets/flyers/waifu4laifu.jpg",
+  "w": 498,
+  "h": 900,
+  "title": "waifu4laifu",
+  "when": "Anime Midwest hotel party \u00b7 July 4"
+ },
+ {
+  "src": "assets/flyers/freakend.jpg",
+  "w": 720,
+  "h": 900,
+  "title": "Freakend",
+  "when": "May 9"
+ },
+ {
+  "src": "assets/flyers/furry-pop-up.jpg",
+  "w": 720,
+  "h": 900,
+  "title": "Furry Pop-Up Night",
+  "when": "Miss Egg Roll, Chicago"
+ },
+ {
+  "src": "assets/flyers/pu-s2e9.jpg",
+  "w": 720,
+  "h": 900,
+  "title": "Project Unknown S2E9",
+  "when": "Mar 15"
+ },
+ {
+  "src": "assets/flyers/pu-s2e8.jpg",
+  "w": 720,
+  "h": 900,
+  "title": "Project Unknown S2E8",
+  "when": "Mar 1"
+ },
+ {
+  "src": "assets/flyers/synergy.jpg",
+  "w": 720,
+  "h": 900,
+  "title": "Greenline \u00d7 Project Unknown: Synergy",
+  "when": "Feb 28"
+ },
+ {
+  "src": "assets/flyers/pu-s2e6.jpg",
+  "w": 600,
+  "h": 750,
+  "title": "Project Unknown S2E6",
+  "when": "Jan 25"
+ },
+ {
+  "src": "assets/flyers/pu-s2e2.jpg",
+  "w": 600,
+  "h": 750,
+  "title": "Project Unknown S2E2",
+  "when": "Dec 14, 2025"
+ },
+ {
+  "src": "assets/flyers/vortex-aqf-2025.jpg",
+  "w": 600,
+  "h": 900,
+  "title": "Run It Up, Turbo",
+  "when": "Vortex @ AquatiFur 2025"
+ }
+]

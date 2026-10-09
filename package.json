@@ -1,0 +1,13 @@
+{
+  "name": "pawsessed-lagoon-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/",
+    "serve": "node tests/serve.mjs 8787",
+    "shots": "node tests/shots.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.11.1"
+  }
+}
