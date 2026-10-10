@@ -9,4 +9,6 @@ window.PAWSESSED = {
   utcOffset: '-05:00',
   startTime: '20:00',
   hours: 6,
+  // the mystery T-shirt raffle is drawn this night (matches the promo)
+  raffleNight: '2026-10-10',
 };

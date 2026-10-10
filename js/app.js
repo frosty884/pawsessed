@@ -65,9 +65,74 @@ function el(tag, attrs = {}, ...kids) {
   return e;
 }
 
+const buzz = (ms = 18) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch { /* not supported */ } };
+
 function setMsg(node, text, kind = '') {
   node.textContent = text;
   node.className = 'form-msg' + (kind ? ' ' + kind : '');
+}
+
+// ------------------------------------------------------------------ keep what you're typing in above the on-screen keyboard
+const FIELD = 'input:not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea, select';
+const vv = window.visualViewport;
+let revealTimer = 0;
+// scroll so `node` (and `below` px under it, e.g. the next field or the send button) sits in the part of the
+// screen the keyboard and the room bar leave visible
+function keepVisible(node, below = 0) {
+  if (!node || !node.isConnected) return;
+  const r = node.getBoundingClientRect();
+  if (!r.width && !r.height) return;
+  const top = vv ? vv.offsetTop : 0;
+  const height = vv ? vv.height : window.innerHeight;
+  const bar = $('#roombar');
+  const visTop = top + (bar && bar.classList.contains('show') ? 64 : 12);
+  const visBottom = top + height - 12;
+  const need = Math.min(r.height + below, visBottom - visTop);
+  if (r.top >= visTop && r.top + need <= visBottom) return;
+  const target = visTop + Math.max(0, (visBottom - visTop - need) / 3);
+  const box = node.closest('.modal-card');
+  (box || window).scrollBy({ top: r.top - target, behavior: reducedMotion ? 'auto' : 'smooth' });
+}
+function initKeyboardAware() {
+  const root = document.documentElement;
+  const sync = () => {
+    if (!vv) return;
+    root.style.setProperty('--vvh', `${Math.round(vv.height)}px`);
+    root.style.setProperty('--vvt', `${Math.round(vv.offsetTop)}px`);
+  };
+  const soon = (ms) => {
+    clearTimeout(revealTimer);
+    revealTimer = setTimeout(() => {
+      const el = document.activeElement;
+      if (el && el.matches(FIELD)) keepVisible(el, 96);
+    }, ms);
+  };
+  // straight away when tabbing between fields, and again once the keyboard has finished sliding up
+  document.addEventListener('focusin', (e) => {
+    if (!e.target.matches(FIELD)) return;
+    soon(60);
+    setTimeout(() => soon(0), 420);
+  });
+  if (vv) {
+    vv.addEventListener('resize', () => { sync(); soon(40); });
+    vv.addEventListener('scroll', sync);
+  }
+  sync();
+}
+// Enter jumps to the next empty field ("next" on phone keyboards); once everything is filled in it sends
+function enterToNext(form) {
+  const fields = $$('input:not([type=radio]):not([type=checkbox])', form);
+  fields.forEach((f, i) => f.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.isComposing || !f.value.trim()) return;
+    const next = fields.slice(i + 1).concat(fields.slice(0, i)).find((x) => !x.value.trim());
+    if (next) { e.preventDefault(); next.focus(); }
+  }));
+}
+// close the keyboard after sending, then show the result once it is out of the way
+function afterSend(node) {
+  const a = document.activeElement;
+  if (a && a.matches(FIELD)) a.blur();
+  setTimeout(() => keepVisible(node, 0), 380);
 }
 
 // ------------------------------------------------------------------ confetti (tiny, no library)
@@ -101,7 +166,7 @@ function confetti(n = 90) {
 // ------------------------------------------------------------------ live status ("party's on" / countdown)
 const NIGHTS = (CFG.nights || []).map((d) => {
   const start = new Date(`${d}T${CFG.startTime || '20:00'}:00${CFG.utcOffset || '-05:00'}`).getTime();
-  return { start, end: start + (CFG.hours || 6) * 3600e3 };
+  return { start, end: start + (CFG.hours || 6) * 3600e3, raffle: d === CFG.raffleNight };
 });
 const localDay = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit' }).format(t);
 const weekday = (t) => new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', weekday: 'long' }).format(t);
@@ -115,7 +180,7 @@ export function partyStatus(now = Date.now()) {
     const n = NIGHTS[i];
     if (now >= n.start && now < n.end) {
       const left = n.end - now;
-      return { state: 'live', text: `Party's on now! Night ${i + 1} of ${NIGHTS.length} · until 2AM` + (left < 3600e3 ? ` (${duration(left)} left)` : '') };
+      return { state: 'live', text: `Party's on now! ${n.raffle ? '🎟️ Raffle night' : `Night ${i + 1} of ${NIGHTS.length}`}` + (left < 3600e3 ? ` · ${duration(left)} left` : '') };
     }
   }
   const next = NIGHTS.find((n) => now < n.start);
@@ -123,7 +188,7 @@ export function partyStatus(now = Date.now()) {
     const today = localDay(now), day = localDay(next.start);
     const tomorrow = localDay(now + 86400e3);
     const when = day === today ? 'tonight' : day === tomorrow ? 'tomorrow' : weekday(next.start);
-    return { state: 'soon', text: `Starts ${when} at 8PM · in ${duration(next.start - now)}` };
+    return { state: 'soon', text: `${next.raffle ? '🎟️ Raffle night · starts' : 'Starts'} ${when} at 8PM · in ${duration(next.start - now)}` };
   }
   if (!NIGHTS.length) return { state: 'soon', text: 'Fri · Sat · Sun · 8PM–2AM' };
   return { state: 'over', text: "That's a wrap! Thanks for partying with us 💖" };
@@ -186,6 +251,8 @@ function initMap() {
 
   // tap the map to open a big, pannable copy (labels are small on a phone)
   const card = $('#map-card'), zoom = $('#map-zoom'), scroll = $('#map-zoom-scroll');
+  const hint = $('.map-hint', card);
+  if (hint && matchMedia('(pointer: fine)').matches) hint.textContent = '⤢ Click to zoom';
   const openZoom = () => {
     const copy = svg.cloneNode(true);
     copy.removeAttribute('id');
@@ -262,9 +329,21 @@ function initViewer() {
 }
 
 // ------------------------------------------------------------------ share section
+let shareFile = null;
+async function sharePage({ video = true, text = "Vortex's AquatiFur party · Room 7416 · Golf Villas D, 4th floor · Fri–Sun 8PM–2AM" } = {}) {
+  const url = location.origin + location.pathname;
+  try {
+    if (video && shareFile) return await navigator.share({ files: [shareFile], title: 'Pawsessed Lagoon', text: `${text}\n${url}` });
+    if (navigator.share) return await navigator.share({ title: 'Pawsessed Lagoon · Room 7416', text, url });
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+  }
+  await copyText(url);
+  toast('Link copied! Paste it anywhere 💖');
+}
+
 function initShare() {
   const video = $('#share-video');
-  let shareFile = null;
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([e]) => {
       if (e.isIntersecting) {
@@ -282,18 +361,7 @@ function initShare() {
       }
     }, { threshold: 0.25 }).observe(video);
   }
-  $('#share-btn').addEventListener('click', async () => {
-    const url = location.origin + location.pathname;
-    const text = "Vortex's AquatiFur party · Room 7416 · Golf Villas D, 4th floor · Fri–Sun 8PM–2AM";
-    try {
-      if (shareFile) return await navigator.share({ files: [shareFile], title: 'Pawsessed Lagoon', text: `${text}\n${url}` });
-      if (navigator.share) return await navigator.share({ title: 'Pawsessed Lagoon · Room 7416', text, url });
-    } catch (e) {
-      if (e && e.name === 'AbortError') return;
-    }
-    await copyText(url);
-    toast('Link copied! Paste it anywhere 💖');
-  });
+  $('#share-btn').addEventListener('click', () => sharePage());
   $$('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
     await copyText(b.dataset.copy);
     toast('Copied! 📋');
@@ -302,6 +370,11 @@ function initShare() {
 
 // ------------------------------------------------------------------ flyers + lightbox
 function initFlyers() {
+  const strip = $('#flyer-strip');
+  const edge = () => strip.classList.toggle('more', strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 8);
+  strip.addEventListener('scroll', edge, { passive: true });
+  window.addEventListener('resize', edge);
+  edge();
   const items = $$('.flyer');
   const box = $('#lightbox'), img = $('#lightbox-img'), cap = $('#lightbox-cap');
   let i = 0, opener = null;
@@ -373,6 +446,7 @@ function applyState(s) {
   renderQueue();
   renderSettings();
   renderRaffleState();
+  celebratePlayed();
 }
 
 async function refresh() {
@@ -402,6 +476,17 @@ function schedulePoll() {
 // ------------------------------------------------------------------ song requests
 const hearts = new Set(store.get('hearts', []));
 const saveHearts = () => store.set('hearts', [...hearts].slice(-200));
+const mine = new Set(store.get('mine', []));
+const told = new Set(store.get('told', []));
+
+function celebratePlayed() {
+  const p = state.played.find((x) => mine.has(x.id) && !told.has(x.id));
+  if (!p) return;
+  told.add(p.id);
+  store.set('told', [...told].slice(-50));
+  toast(`🎉 The DJ played your request: ${p.title}!`, 6000);
+  confetti(90);
+}
 
 function queueItem(item) {
   const li = el('li', { 'data-id': item.id });
@@ -429,7 +514,9 @@ function renderQueue() {
     $('.q-n', li).textContent = n + 1;
     $('.q-title', li).textContent = item.title;
     $('.q-artist', li).textContent = item.artist;
-    $('.q-by', li).textContent = 'asked by ' + item.by;
+    const isMine = mine.has(item.id);
+    li.classList.toggle('mine', isMine);
+    $('.q-by', li).textContent = isMine ? 'your request ✨' : 'asked by ' + item.by;
     const h = $('.heart', li);
     h.textContent = '♥ ' + item.votes;
     h.classList.toggle('mine', hearts.has(item.id));
@@ -458,6 +545,7 @@ async function heart(id, li) {
   btn.disabled = false;
   if (!r.ok) return toast(r.error || 'Could not heart that');
   hearts.add(id); saveHearts();
+  buzz(12);
   applyState(r.state);
 }
 
@@ -471,12 +559,14 @@ function initRequests() {
   }
   const by = form.elements.by;
   by.value = store.get('name', '');
+  enterToNext(form);
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = { title: form.elements.title.value.trim(), artist: form.elements.artist.value.trim(), by: by.value.trim() };
     if (!data.title || !data.artist || !data.by) {
       setMsg(msg, 'Fill in the title, artist and your name 🙏', 'err');
       (!data.title ? form.elements.title : !data.artist ? form.elements.artist : by).focus();
+      setTimeout(() => keepVisible(msg, 0), 450);
       return;
     }
     const btn = $('button[type=submit]', form);
@@ -484,15 +574,24 @@ function initRequests() {
     setMsg(msg, 'Sending…');
     const r = await call('POST', { action: 'request', ...data });
     btn.disabled = false;
-    if (!r.ok) return setMsg(msg, r.error || 'Something went wrong. Try again!', 'err');
+    if (!r.ok) {
+      setMsg(msg, r.error || 'Something went wrong. Try again!', 'err');
+      return keepVisible(msg, 0);
+    }
     store.set('name', data.by);
     hearts.add(r.id); saveHearts();
+    mine.add(r.id); store.set('mine', [...mine].slice(-50));
     applyState(r.state);
     const pos = r.state.queue.findIndex((q) => q.id === r.id) + 1;
     setMsg(msg, r.merged ? 'Someone already asked for that one, so we added your ♥ to it!' : `Sent! 🎶 You're #${pos} in the queue.`, 'ok');
     form.elements.title.value = '';
     form.elements.artist.value = '';
     confetti(50);
+    buzz();
+    // keyboard down, then flash the song where it landed in the queue
+    const li = $(`#queue li[data-id="${CSS.escape(r.id)}"]`);
+    afterSend(li || msg);
+    if (li) { li.classList.add('flash'); setTimeout(() => li.classList.remove('flash'), 1800); }
   });
 }
 
@@ -504,6 +603,7 @@ function renderSettings() {
   notice.textContent = s.notice || '';
   const now = $('#now-spinning');
   now.hidden = !s.nowSpinning;
+  $('#status-dj').textContent = s.nowSpinning && $('#status').dataset.state === 'live' ? ` · 🎧 ${s.nowSpinning}` : '';
   $('#now-dj').textContent = s.nowSpinning || '';
   $$('.djs li').forEach((li) => li.classList.toggle('on', !!s.nowSpinning && li.dataset.dj === s.nowSpinning));
   const paused = !s.requestsOpen;
@@ -534,12 +634,13 @@ function renderTicket() {
     el('span', { text: "🎟️ You're in the raffle!" }),
     el('b', { text: '#' + t.ticket }),
     el('span', { text: `${t.handle} on ${t.platform === 'telegram' ? 'Telegram' : 'Instagram'}` }),
+    el('button', { class: 'btn', type: 'button', text: '📤 Invite friends', onclick: () => sharePage({ video: false, text: "I'm at Vortex's AquatiFur party! Room 7416 · Golf Villa D, 4th floor · free drinks + a T-shirt raffle" }) }),
   );
 }
 
 function renderRaffleState() {
   const r = state.raffle || {};
-  $('#raffle-count').textContent = r.entries ? `🎟️ ${r.entries} ${r.entries === 1 ? 'entry' : 'entries'} so far · winner drawn at the party` : 'Be the first to enter!';
+  $('#raffle-count').textContent = r.entries ? `🎟️ ${r.entries} ${r.entries === 1 ? 'entry' : 'entries'} so far · winner drawn Saturday night` : 'Be the first to enter!';
   const w = $('#winner');
   if (r.winner && r.winner.handle) {
     w.hidden = false;
@@ -566,6 +667,7 @@ function initRaffle() {
     $('#raffle-count').textContent = '';
     return;
   }
+  enterToNext(form);
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const handle = form.elements.handle.value.trim();
@@ -576,7 +678,10 @@ function initRaffle() {
     setMsg(msg, 'Entering…');
     const r = await call('POST', { action: 'raffle', handle, platform, follows: [...followed] });
     btn.disabled = false;
-    if (!r.ok) return setMsg(msg, r.error || 'Something went wrong. Try again!', 'err');
+    if (!r.ok) {
+      setMsg(msg, r.error || 'Something went wrong. Try again!', 'err');
+      return keepVisible(msg, 0);
+    }
     store.set('ticket', { ticket: r.ticket, handle: r.handle, platform: r.platform });
     renderTicket();
     applyState(r.state);
@@ -584,7 +689,8 @@ function initRaffle() {
     const missing = 5 - followed.size;
     setMsg(msg, r.already ? `You were already in with ticket #${r.ticket} ✓`
       : missing > 0 ? `You're in! Follow the other ${missing} above so your entry counts.` : "You're in! Good luck 🍀", 'ok');
-    if (!r.already) confetti(110);
+    if (!r.already) { confetti(110); buzz(); }
+    afterSend($('#ticket'));
   });
 }
 
@@ -704,6 +810,7 @@ function initDj() {
 
 // ------------------------------------------------------------------ boot
 function boot() {
+  initKeyboardAware();
   initStatus();
   initReveal();
   initRoomBar();

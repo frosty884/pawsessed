@@ -20,7 +20,7 @@ test.after(async () => {
   srv.server.close();
 });
 
-async function open({ width = 390, height = 844, live = true, query = '' } = {}) {
+async function open({ width = 390, height = 844, live = true, query = '', init = null } = {}) {
   // each page is its own "device": separate storage, separate client id
   const ctx = await browser.createBrowserContext();
   const page = await ctx.newPage();
@@ -28,6 +28,7 @@ async function open({ width = 390, height = 844, live = true, query = '' } = {})
   page.on('console', (m) => { if (m.type() === 'error' && !/i\.ytimg\.com|ERR_/.test(m.text())) errors.push(m.text()); });
   await page.setViewport({ width, height, deviceScaleFactor: 1, isMobile: width < 700, hasTouch: width < 700 });
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+  if (init) await init(page);
   const q = [live ? `api=${api}` : 'api=off', query].filter(Boolean).join('&');
   await page.goto(base + (q ? '?' + q : ''), { waitUntil: 'domcontentloaded' });
   if (live) await page.waitForFunction(() => window.__pawsessed && window.__pawsessed.state, { timeout: 10000 });
@@ -72,6 +73,8 @@ test('party status: countdown, live, between nights, wrap-up (Wisconsin time)', 
   assert.equal(s.state, 'soon'); assert.match(s.text, /tonight/);
   s = await at('2026-10-10T03:00:00-05:00');
   assert.equal(s.state, 'soon'); assert.match(s.text, /tonight at 8PM · in 17h/);
+  s = await at('2026-10-10T22:00:00-05:00');
+  assert.equal(s.state, 'live'); assert.match(s.text, /Raffle night/);
   s = await at('2026-10-11T21:00:00-05:00');
   assert.match(s.text, /Night 3 of 3/);
   s = await at('2026-10-12T02:30:00-05:00');
@@ -96,7 +99,7 @@ test('song request: send, see it in the queue, duplicate becomes a heart', async
   await page.waitForFunction(() => document.querySelector('#req-msg').textContent.includes('in the queue'));
   assert.match(await text(page, '#req-msg'), /#1 in the queue/);
   assert.equal(await page.$$eval('#queue li', (l) => l.length), 1);
-  assert.match(await text(page, '#queue li'), /Sandstorm.*Darude.*asked by Nico/s);
+  assert.match(await text(page, '#queue li'), /Sandstorm.*Darude.*your request/s, 'the sender sees their own request tagged');
   assert.equal(await page.$eval('#req-form [name=by]', (i) => i.value), 'Nico', 'name is remembered');
   // empty fields are caught before sending
   await page.click('#req-form button[type=submit]');
@@ -300,5 +303,88 @@ test('map: the walk draws, paw prints land on the map along the route, markers s
   assert.equal(r.inside, r.paws, 'every paw print sits inside the map');
   assert.deepEqual(r.steps, ['1', '2', '3']);
   assert.equal(r.card, '7416');
+  await page.close();
+});
+
+
+// a phone keyboard covering everything below 360px of an 844px screen
+const fakeKeyboard = (page) => page.evaluateOnNewDocument(() => {
+  const ls = {};
+  const fake = {
+    width: 390, height: 360, offsetTop: 0, offsetLeft: 0, pageTop: 0, pageLeft: 0, scale: 1,
+    addEventListener: (t, f) => { (ls[t] ||= []).push(f); }, removeEventListener() {},
+    fire: (t) => (ls[t] || []).forEach((f) => f()),
+  };
+  Object.defineProperty(window, 'visualViewport', { configurable: true, get: () => fake });
+  window.__vv = fake;
+});
+
+test('keeps the field you are typing in above the on-screen keyboard, including when tabbing', async () => {
+  const page = await open({ init: fakeKeyboard });
+  const box = (sel) => page.$eval(sel, (el) => { const r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; });
+  for (const sel of ['#req-form [name=title]', '#req-form [name=by]', '#raffle-form [name=handle]']) {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.focus(sel);
+    await page.evaluate(() => window.__vv.fire('resize'));
+    await new Promise((r) => setTimeout(r, 650));
+    const r = await box(sel);
+    assert.ok(r.top >= 0 && r.bottom <= 348, `${sel} hidden by the keyboard: ${JSON.stringify(r)}`);
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.focus('#req-form [name=title]');
+  await new Promise((r) => setTimeout(r, 650));
+  await page.keyboard.press('Tab');
+  await new Promise((r) => setTimeout(r, 650));
+  const r = await box('#req-form [name=artist]');
+  assert.ok(r.top >= 0 && r.bottom <= 348, `artist hidden after Tab: ${JSON.stringify(r)}`);
+  // the DJ popup shrinks to the visible area too
+  await page.click('#dj-open');
+  await page.waitForSelector('#dj-modal:not([hidden])');
+  await page.focus('#dj-form [name=password]');
+  await new Promise((r) => setTimeout(r, 650));
+  const pw = await box('#dj-form [name=password]');
+  assert.ok(pw.top >= 0 && pw.bottom <= 348, `password hidden: ${JSON.stringify(pw)}`);
+  await page.close();
+});
+
+test('Enter jumps to the next empty field, then sends the request', async () => {
+  const page = await open();
+  await page.$eval('#req-form [name=by]', (i) => { i.value = ''; });
+  await page.focus('#req-form [name=title]');
+  await page.keyboard.type('Next Test');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.evaluate(() => document.activeElement.name), 'artist');
+  await page.keyboard.type('Someone');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.evaluate(() => document.activeElement.name), 'by');
+  await page.keyboard.type('Kai');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('#req-msg').textContent.includes('in the queue'));
+  assert.notEqual(await page.evaluate(() => document.activeElement && document.activeElement.name), 'by', 'keyboard closed after sending');
+  await page.close();
+});
+
+test('your own requests are tagged, and you get a shout when the DJ plays one', async () => {
+  const page = await open();
+  await page.type('#req-form [name=title]', 'Mine Song');
+  await page.type('#req-form [name=artist]', 'Me');
+  await page.$eval('#req-form [name=by]', (i) => { i.value = 'Tester'; });
+  await page.click('#req-form button[type=submit]');
+  await page.waitForFunction(() => [...document.querySelectorAll('#queue li.mine .q-title')].some((e) => e.textContent === 'Mine Song'));
+  assert.match(await page.evaluate(() => [...document.querySelectorAll('#queue li.mine')].find((l) => l.textContent.includes('Mine Song')).querySelector('.q-by').textContent), /your request/);
+  const sheet = srv.gas.sheet('Requests');
+  const row = sheet.cells.findIndex((r) => r && r[2] === 'Mine Song');
+  sheet.set(row + 1, 7, true); // the DJ ticks Played
+  srv.gas.ctx.onEdit();
+  await refresh(page);
+  await page.waitForFunction(() => document.querySelector('#toast').textContent.includes('played your request'));
+  await page.close();
+});
+
+test('hero shortcuts point at real sections', async () => {
+  const page = await open({ live: false });
+  const targets = await page.$$eval('.quick a', (as) => as.map((a) => a.getAttribute('href')));
+  assert.deepEqual(targets, ['#requests', '#raffle', '#donate']);
+  for (const t of targets) assert.ok(await page.$(t), t);
   await page.close();
 });
