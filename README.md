@@ -24,15 +24,22 @@ Use Chrome. On a phone, turn on **⋮ → Desktop site** for steps 2–6.
 
 Alternative: create a Sheet first and use **Extensions → Apps Script** with the same code. That also adds a 🌴 Pawsessed menu in the sheet.
 
-If you edit the code later: **Deploy → Manage deployments → ✏️ → Version: New version → Deploy**, so the URL stays the same.
+### Updating the script (same URL, ~2 minutes on a phone)
+
+1. Copy the new code from <https://raw.githubusercontent.com/frosty884/pawsessed/main/apps-script/Code.gs> (long-press → Select all → Copy).
+2. Open <https://script.google.com>, open the project, tap in the code, Select all, paste over it, tap 💾 Save.
+3. **Deploy → Manage deployments → ✏️ (edit) → Version: New version → Deploy.** The web app URL stays the same.
+
+The first visit after an update tidies the Requests and Raffle tabs automatically (the first version pre-filled checkboxes down to row 1000, which pushed every new row below them).
 
 ### Running the party from the sheet
 
 | Tab | What to do |
 | --- | --- |
 | Requests | Tick **Played** when it's played, or **Removed** to drop it. Rows grey out. |
-| Raffle | Every entry with handle, platform and which accounts they tapped. Draw from the DJ portal (🎟️ Draw raffle winner) or the sheet menu. |
+| Raffle | Every entry with handle, platform and which accounts they tapped. Odd-looking handles are still entered and marked `double-check`. Tick **Removed** (or ✕ in the DJ portal) to take an entry out of the draw. Draw from the DJ portal or the sheet menu. |
 | Settings | `requestsOpen`, `raffleOpen` (checkboxes), `nowSpinning` (dropdown), `notice` (banner text), `raffleWinner` (clear it to hide the winner). |
+| Log | Anything that went wrong: refused or failed submissions with the reason, newest last. |
 
 DJ password: the one Vortex picked (stored as a hash in `Code.gs`). To change it, add a Script property `DJ_PASSWORD` under Apps Script → Project Settings.
 
@@ -40,7 +47,7 @@ DJ password: the one Vortex picked (stored as a hash in `Code.gs`). To change it
 
 ```bash
 npm install
-npm test            # 38 tests: the real Code.gs on an in-memory sheet, plus Chrome tests of the page
+npm test            # 54 tests: the real Code.gs on an in-memory sheet, plus Chrome tests of the page
 npm run serve       # http://localhost:8787/?api=http://localhost:8787/api/exec  (local mock backend)
 npm run shots       # phone + desktop screenshots in tests/shots/
 ```

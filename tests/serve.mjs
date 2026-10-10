@@ -16,10 +16,18 @@ const MIME = {
 export function startServer(port = 0) {
   const gas = createGas();
   gas.ctx.setup();
+  // tests can make the next N POSTs fail like a Google outage (an HTML error page instead of JSON)
+  const faults = { posts: 0 };
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, 'http://x');
     if (url.pathname === '/api/exec') {
       res.setHeader('Access-Control-Allow-Origin', '*');
+      if (req.method === 'POST' && faults.posts > 0) {
+        faults.posts--;
+        req.resume();
+        res.writeHead(500, { 'Content-Type': 'text/html' });
+        return res.end('<html><body>Service unavailable</body></html>');
+      }
       if (req.method === 'GET') {
         const out = gas.ctx.doGet({ parameter: Object.fromEntries(url.searchParams) }).getContent();
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -52,7 +60,7 @@ export function startServer(port = 0) {
     res.writeHead(200, { 'Content-Type': type, 'Content-Length': size, 'Accept-Ranges': 'bytes' });
     createReadStream(p).pipe(res);
   });
-  return new Promise((resolve) => server.listen(port, '127.0.0.1', () => resolve({ server, gas, port: server.address().port })));
+  return new Promise((resolve) => server.listen(port, '127.0.0.1', () => resolve({ server, gas, faults, port: server.address().port })));
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

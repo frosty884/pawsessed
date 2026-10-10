@@ -455,6 +455,8 @@ fieldset.platform input:focus-visible + span { outline: 3px solid var(--yellow);
 .dj-act.played { background: #2fb36e; }
 .dj-act.remove { background: #c43358; }
 .empty, .paused { color: var(--muted); text-align: center; margin: 18px 0 6px; }
+.trouble { margin: 12px 0 0; padding: 8px 12px; border-radius: 12px; background: rgba(255, 107, 139, .12); border: 1px solid rgba(255, 107, 139, .4); color: #ffc9d6; font-size: 14px; text-align: center; }
+.pending { margin: 0; padding: 8px 12px; border-radius: 12px; background: rgba(255, 224, 20, .1); border: 1px dashed rgba(255, 224, 20, .5); color: #fff3b0; font-size: 14px; }
 .played-wrap { margin-top: 14px; color: var(--muted); }
 .played-wrap summary { cursor: pointer; font-weight: 500; }
 .played li { padding: 6px 2px; font-size: 15px; border-bottom: 1px solid rgba(255, 255, 255, .06); }
@@ -546,6 +548,14 @@ footer.site-footer b { color: var(--text); }
 .modal-card h3 { margin-top: 0; }
 .modal-x { top: 10px; right: 10px; }
 .dj-panel { display: grid; gap: 14px; }
+.dj-raffle { border: 1px solid rgba(255, 255, 255, .14); border-radius: 14px; padding: 10px 12px; }
+.dj-raffle summary { cursor: pointer; font-weight: 600; }
+.dj-raffle-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; max-height: 260px; overflow: auto; }
+.dj-raffle-list li { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 10px; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, .06); }
+.dj-raffle-list li.removed { opacity: .5; text-decoration: line-through; }
+.dr-main { font-weight: 600; overflow-wrap: anywhere; }
+.dr-sub { grid-column: 1; color: var(--muted); font-size: 13px; }
+.dr-act { grid-column: 2; grid-row: 1 / span 2; min-width: 44px; height: 36px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .25); background: none; color: #fff; cursor: pointer; }
 .switch { display: flex; align-items: center; gap: 12px; font-size: 16px; color: var(--text); cursor: pointer; }
 .switch input { width: 46px; min-height: 26px; height: 26px; appearance: none; -webkit-appearance: none; border-radius: 999px; background: rgba(255, 255, 255, .2); position: relative; padding: 0; border: 0; cursor: pointer; transition: background .2s; flex: none; }
 .switch input::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s var(--ease); }

@@ -271,6 +271,7 @@
       <label>Your name or @<input name="by" maxlength="40" required placeholder="so the DJ knows who asked" enterkeyhint="send"></label>
       <button class="btn btn-primary" type="submit">🎶 Send request</button>
       <p class="form-msg" id="req-msg" role="status" aria-live="polite"></p>
+      <p class="pending" id="req-pending" role="status" hidden></p>
     </form>
     <div class="offline" id="req-offline" hidden>Requests open when the party starts. Check back soon!</div>
   </div>
@@ -281,6 +282,7 @@
       <span class="live" id="live"><i></i>live</span>
     </div>
     <p class="paused" id="req-paused" hidden>⏸️ The DJ has paused requests for now.</p>
+    <p class="trouble" id="req-trouble" hidden>📶 Having trouble reaching the request box. Retrying…</p>
     <ol class="queue" id="queue" aria-live="polite"></ol>
     <p class="empty" id="queue-empty">No requests yet. Be the first!</p>
     <details class="played-wrap" id="played-wrap" hidden>
@@ -316,6 +318,7 @@
       </fieldset>
       <button class="btn btn-primary" type="submit">🎟️ Enter the raffle</button>
       <p class="form-msg" id="raffle-msg" role="status" aria-live="polite"></p>
+      <p class="pending" id="raffle-pending" role="status" hidden></p>
     </form>
     <div class="ticket" id="ticket" hidden></div>
     <div class="offline" id="raffle-offline" hidden>Raffle entries open soon. Check back!</div>
@@ -460,6 +463,12 @@
         <button class="btn btn-glass" type="button" id="dj-hide-winner">Hide winner</button>
       </div>
       <a class="btn btn-glass" id="dj-sheet" href="#" target="_blank" rel="noopener" hidden>📊 Open the Google Sheet</a>
+      <details class="dj-raffle" id="dj-raffle" hidden>
+        <summary>🎟️ Raffle entries <span id="dj-raffle-count"></span></summary>
+        <ol class="dj-raffle-list" id="dj-raffle-list"></ol>
+        <p class="fine" id="dj-raffle-empty" hidden>No entries yet.</p>
+        <p class="fine">✕ takes an entry out of the draw (test entries, duplicates). It stays in the Sheet, struck through.</p>
+      </details>
       <div class="btn-row">
         <button class="btn btn-primary" type="button" id="dj-save">Save</button>
         <button class="btn btn-glass" type="button" id="dj-clear">Clear queue</button>

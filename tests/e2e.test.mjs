@@ -218,11 +218,11 @@ test('raffle: follow taps are tracked, entry gets a ticket, the winner shows up'
   const row = srv.gas.sheet('Raffle').rows()[0];
   assert.equal(row[3], '@nico.imouto');
   assert.equal(row[5].split(', ').length, 5, 'all five follows recorded');
-  // telegram entry with a bad username is rejected with a friendly message
+  // a phone number instead of a username is refused with a friendly message
   await page.click('#raffle-form input[value=telegram]');
-  await page.type('#raffle-form [name=handle]', 'abc');
+  await page.type('#raffle-form [name=handle]', '+1 555 123 4567');
   await page.click('#raffle-form button[type=submit]');
-  await page.waitForFunction(() => document.querySelector('#raffle-msg').textContent.includes('Telegram username'));
+  await page.waitForFunction(() => document.querySelector('#raffle-msg').textContent.includes('phone number'));
   srv.gas.ctx.drawRaffleWinner();
   await refresh(page);
   await page.waitForSelector('#winner:not([hidden])');
@@ -386,5 +386,56 @@ test('hero shortcuts point at real sections', async () => {
   const targets = await page.$$eval('.quick a', (as) => as.map((a) => a.getAttribute('href')));
   assert.deepEqual(targets, ['#requests', '#raffle', '#donate']);
   for (const t of targets) assert.ok(await page.$(t), t);
+  await page.close();
+});
+
+
+test('a raffle entry sent during an outage is kept on the phone and goes through by itself', async () => {
+  const page = await open();
+  srv.faults.posts = 3; // the first send and its follow-up retries hit an outage
+  await page.type('#raffle-form [name=handle]', '@outage_survivor');
+  await page.click('#raffle-form button[type=submit]');
+  await page.waitForFunction(() => document.querySelector('#raffle-msg').textContent.includes('saved on your phone'));
+  await page.waitForSelector('#raffle-pending:not([hidden])');
+  assert.equal(await page.evaluate(() => window.__pawsessed.outbox().length), 1);
+  srv.faults.posts = 0; // Google is back
+  await page.evaluate(() => window.__pawsessed.flushOutbox());
+  await page.waitForFunction(() => document.querySelector('#toast').textContent.includes('went through'));
+  await page.waitForSelector('#ticket:not([hidden])');
+  assert.match(await text(page, '#ticket'), /@outage_survivor/);
+  assert.equal(await page.evaluate(() => window.__pawsessed.outbox().length), 0);
+  assert.equal(await visible(page, '#raffle-pending'), false);
+  const rows = srv.gas.sheet('Raffle').rows().filter((r) => r[3] === '@outage_survivor');
+  assert.equal(rows.length, 1, 'saved exactly once');
+  await page.close();
+});
+
+test('a song request survives a busy moment without the guest noticing', async () => {
+  const page = await open();
+  srv.gas.lock.busy = true;
+  await page.type('#req-form [name=title]', 'Busy Song');
+  await page.type('#req-form [name=artist]', 'Rush');
+  await page.$eval('#req-form [name=by]', (i) => { i.value = 'Jo'; });
+  await page.click('#req-form button[type=submit]');
+  await new Promise((r) => setTimeout(r, 600));
+  srv.gas.lock.busy = false; // frees up before the quick automatic retry
+  await page.waitForFunction(() => document.querySelector('#req-msg').textContent.includes('in the queue'), { timeout: 10000 });
+  assert.equal(srv.gas.sheet('Requests').rows().filter((r) => r[2] === 'Busy Song').length, 1);
+  await page.close();
+});
+
+test('DJ portal lists raffle entries and can take a test entry out of the draw', async () => {
+  srv.gas.call.post({ action: 'raffle', handle: 'dj_list_test', platform: 'instagram', client: 'client-list-0001' });
+  const page = await open();
+  await page.click('#dj-open');
+  await page.type('#dj-form [name=password]', 'vortex');
+  await page.click('#dj-form button[type=submit]');
+  await page.waitForSelector('#dj-raffle:not([hidden])');
+  await page.click('#dj-raffle summary');
+  await page.waitForFunction(() => [...document.querySelectorAll('#dj-raffle-list li')].some((l) => l.textContent.includes('@dj_list_test')));
+  const before = await page.evaluate(() => window.__pawsessed.state.raffle.entries);
+  await page.evaluate(() => [...document.querySelectorAll('#dj-raffle-list li')].find((l) => l.textContent.includes('@dj_list_test')).querySelector('button').click());
+  await page.waitForFunction(() => [...document.querySelectorAll('#dj-raffle-list li.removed')].some((l) => l.textContent.includes('@dj_list_test')));
+  assert.equal(await page.evaluate(() => window.__pawsessed.state.raffle.entries), before - 1);
   await page.close();
 });

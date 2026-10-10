@@ -12,9 +12,9 @@ const fresh = () => {
 };
 const req = (g, title, artist, by = 'Sam', client = CLIENT) => g.call.post({ action: 'request', title, artist, by, client });
 
-test('setup creates the three sheets with headers and default settings', () => {
+test('setup creates the tabs with headers and default settings', () => {
   const g = fresh();
-  assert.deepEqual([...g.sheets.keys()].sort(), ['Raffle', 'Requests', 'Settings']);
+  assert.deepEqual([...g.sheets.keys()].sort(), ['Log', 'Raffle', 'Requests', 'Settings']);
   assert.equal(g.sheet('Requests').cells[0][2], 'Title');
   const settings = Object.fromEntries(g.sheet('Settings').rows().map((r) => [r[0], r[1]]));
   assert.equal(settings.requestsOpen, true);
@@ -201,16 +201,26 @@ test('raffle: valid entry gets a ticket, the same handle again keeps it', () => 
   assert.equal(tg.state.raffle.entries, 2);
 });
 
-test('raffle: rejects bad handles and platforms, limits entries per device', () => {
+test('raffle: odd-looking handles go in (flagged), junk is refused, one device enters at most 3', () => {
   const g = fresh();
-  const bad = (handle, platform) => g.call.post({ action: 'raffle', handle, platform, client: CLIENT });
-  assert.match(bad('frosty', 'tiktok').error, /Instagram or Telegram/);
-  assert.match(bad('has space', 'instagram').error, /Instagram username/);
-  assert.match(bad('abc', 'telegram').error, /Telegram username/);
-  assert.match(bad('=HYPERLINK("x")', 'instagram').error, /Instagram username/);
-  for (const h of ['one_1', 'two_2', 'three_3']) assert.equal(bad(h, 'telegram').ok, true);
-  assert.match(bad('four_4', 'telegram').error, /One entry each/);
+  const enter = (handle, platform, client = CLIENT) => g.call.post({ action: 'raffle', handle, platform, client });
+  assert.match(enter('frosty', 'tiktok').error, /Instagram or Telegram/);
+  assert.match(enter('', 'instagram').error, /Add your @/);
+  assert.match(enter('=HYPERLINK("x")', 'instagram').error, /username/);
+  assert.match(enter('+1 (555) 123-4567', 'telegram').error, /phone number/);
+  assert.match(enter('x'.repeat(41), 'instagram').error, /long/);
+  const odd = enter('Frosty Cat', 'instagram');
+  assert.equal(odd.ok, true, 'a display name still gets an entry');
+  assert.equal(odd.check, true);
+  const row = g.sheet('Raffle').rows().find((r) => r[3] === '@Frosty Cat');
+  assert.equal(row[9], 'double-check');
+  assert.equal(row[4], '', 'no profile link for an unusual handle');
+  assert.equal(enter('abc', 'telegram').check, true, 'short telegram names are flagged, not refused');
+  assert.equal(enter('good_name', 'telegram').ok, true);
+  assert.match(enter('one_more', 'telegram').error, /One entry each/, 'the 4th entry from one device is refused');
+  assert.equal(enter('one_more', 'telegram', 'client-other-0002').ok, true);
 });
+
 
 test('raffle can be closed from settings', () => {
   const g = fresh();
@@ -250,7 +260,7 @@ test('standalone script (made at script.google.com) creates its own sheet once a
   assert.equal(g.call.get().ok, true, 'the first request creates the sheet');
   assert.equal(g.created(), 1);
   assert.equal(g.props.get('SHEET_ID'), 'sheet-id-1');
-  assert.deepEqual([...g.sheets.keys()].sort(), ['Raffle', 'Requests', 'Settings']);
+  assert.deepEqual([...g.sheets.keys()].sort(), ['Log', 'Raffle', 'Requests', 'Settings']);
   assert.equal(g.call.post({ action: 'request', title: 'Song', artist: 'Artist', by: 'Me', client: CLIENT }).ok, true);
   assert.equal(g.ctx.setup(), 'https://docs.google.com/spreadsheets/d/sheet-id-1/edit');
   assert.equal(g.created(), 1, 'never makes a second spreadsheet');
@@ -268,4 +278,135 @@ test('DJ portal: login gives the sheet link, draw and hide the raffle winner', (
   assert.deepEqual(d.state.raffle.winner, { platform: 'telegram', handle: '@lucky_one' });
   const h = g.call.post({ action: 'djHideWinner', ...pw });
   assert.equal(h.state.raffle.winner, null);
+});
+
+
+// ---------------------------------------------------------------- robustness
+
+test('new tabs have no pre-filled checkboxes, so the first entry lands on row 2', () => {
+  const g = fresh();
+  assert.equal(g.sheet('Requests').getLastRow(), 1);
+  assert.equal(g.sheet('Raffle').getLastRow(), 1);
+  g.call.post({ action: 'request', title: 'Song', artist: 'Artist', by: 'Me', client: CLIENT });
+  g.call.post({ action: 'raffle', handle: 'first_one', platform: 'instagram', client: CLIENT });
+  assert.equal(g.sheet('Requests').cells[1][2], 'Song');
+  assert.equal(g.sheet('Raffle').cells[1][3], '@first_one');
+  assert.ok(g.sheet('Requests').isCheckbox(2, 7) && g.sheet('Requests').isCheckbox(2, 8), 'Played/Removed are checkboxes on the new row');
+  assert.ok(g.sheet('Raffle').isCheckbox(2, 8), 'Winner is a checkbox on the new row');
+});
+
+test('a sheet from the first version (entries pushed below row 1000) is tidied on the next visit', () => {
+  const g = createGas();
+  const ss = g.ss;
+  // what the first version left behind: checkboxes pre-filled on rows 2-1000, real rows from 1001
+  ss.insertSheet('Requests');
+  ss.insertSheet('Raffle');
+  ss.insertSheet('Settings');
+  const req = g.sheet('Requests'), raf = g.sheet('Raffle');
+  req.set(1, 1, 'ID');
+  req.getRange(2, 7, 999, 2).insertCheckboxes();
+  req.getRange(1001, 1, 2, 11).setValues([
+    ['aaa111', new Date(), 'Billie Jean', 'Michael Jackson', 'Zeus', 3, false, false, '', 'client-z', 'client-z'],
+    ['bbb222', new Date(), 'Murmure', 'Inlie', 'Kix', 1, true, false, new Date(), 'client-k', 'client-k'],
+  ]);
+  raf.set(1, 1, 'Ticket');
+  raf.getRange(2, 8, 999, 1).insertCheckboxes();
+  raf.getRange(1001, 1, 2, 8).setValues([
+    [1, new Date(), 'instagram', '@kix7', 'https://instagram.com/kix7', 'frostyxlr8', 'client-k', false],
+    [2, new Date(), 'telegram', '@zeus_dj', 'https://t.me/zeus_dj', '', 'client-z', false],
+  ]);
+  assert.equal(req.getLastRow(), 1002);
+
+  const s = g.call.get();
+  assert.equal(s.ok, true);
+  assert.equal(s.raffle.entries, 2);
+  assert.deepEqual(s.queue.map((q) => q.title), ['Billie Jean']);
+  assert.deepEqual(s.played.map((q) => q.title), ['Murmure'], 'Played survives the move');
+  assert.equal(req.getLastRow(), 3, 'requests now sit on rows 2-3');
+  assert.equal(raf.getLastRow(), 3, 'raffle entries now sit on rows 2-3');
+  assert.equal(req.cells[2][2], 'Murmure');
+  assert.equal(req.cells[2][6], true);
+  assert.ok(req.isCheckbox(3, 7) && !req.isCheckbox(500, 7), 'checkboxes only on real rows');
+  assert.equal(g.props.get('tidyVersion'), '2');
+  assert.ok(g.sheet('Log').rows().some((r) => r[1] === 'tidy' && r[2] === 'fixed'));
+  // and the next entry goes right under them
+  const r = g.call.post({ action: 'raffle', handle: 'next_person', platform: 'instagram', client: CLIENT });
+  assert.equal(r.ticket, 3);
+  assert.equal(raf.cells[3][3], '@next_person');
+  assert.equal(raf.getLastRow(), 4);
+});
+
+test('entries go straight under the last real row even if empty checkboxes were added below', () => {
+  const g = fresh();
+  g.call.post({ action: 'raffle', handle: 'row_two', platform: 'instagram', client: CLIENT });
+  g.sheet('Raffle').getRange(3, 8, 60, 1).insertCheckboxes(); // someone pre-fills checkboxes again
+  g.call.post({ action: 'raffle', handle: 'row_three', platform: 'instagram', client: 'client-dddd-0004' });
+  assert.equal(g.sheet('Raffle').cells[2][3], '@row_three');
+});
+
+test('a retried submission (same sid) is saved once and answered the same way', () => {
+  const g = fresh();
+  const body = { action: 'raffle', handle: 'retry_me', platform: 'instagram', client: CLIENT, sid: 'sid-1234-abcd' };
+  const a = g.call.post(body);
+  const b = g.call.post(body);
+  assert.equal(a.ticket, 1);
+  assert.equal(b.ticket, 1);
+  assert.equal(b.replayed, true);
+  assert.equal(g.sheet('Raffle').rows().length, 1);
+  const r1 = g.call.post({ action: 'request', title: 'Once', artist: 'Only', by: 'Me', client: CLIENT, sid: 'sid-req-0001' });
+  const r2 = g.call.post({ action: 'request', title: 'Once', artist: 'Only', by: 'Me', client: CLIENT, sid: 'sid-req-0001' });
+  assert.equal(r1.id, r2.id);
+  assert.equal(g.sheet('Requests').rows().length, 1);
+});
+
+test('when the sheet is busy the site is told to retry, and nothing is half-saved', () => {
+  const g = fresh();
+  g.lock.busy = true;
+  const r = g.call.post({ action: 'raffle', handle: 'busy_time', platform: 'instagram', client: CLIENT, sid: 'sid-busy-0001' });
+  assert.equal(r.ok, false);
+  assert.equal(r.code, 503);
+  assert.equal(r.retry, true);
+  assert.equal(g.sheet('Raffle').rows().length, 0);
+  g.lock.busy = false;
+  assert.equal(g.call.post({ action: 'raffle', handle: 'busy_time', platform: 'instagram', client: CLIENT, sid: 'sid-busy-0001' }).ticket, 1);
+});
+
+test('refused submissions are written to the Log tab (wrong DJ passwords are not)', () => {
+  const g = fresh();
+  g.call.post({ action: 'raffle', handle: '+1 555 123 4567', platform: 'telegram', client: CLIENT });
+  g.call.post({ action: 'djLogin', password: 'nope' });
+  const log = g.sheet('Log').rows();
+  assert.equal(log.length, 1);
+  assert.equal(log[0][1], 'raffle');
+  assert.equal(log[0][2], 'rejected');
+  assert.match(log[0][3], /phone number/);
+  assert.match(log[0][5], /555/);
+});
+
+test('DJ portal: list, remove and restore raffle entries; removed ones are not counted or drawn', () => {
+  const g = fresh();
+  const pw = { password: 'vortex' };
+  g.call.post({ action: 'raffle', handle: 'keep_me', platform: 'instagram', client: CLIENT });
+  g.call.post({ action: 'raffle', handle: 'test_entry', platform: 'instagram', client: 'client-eeee-0005' });
+  assert.match(g.call.post({ action: 'djRaffleList', password: 'nope' }).error, /Wrong password/);
+  let r = g.call.post({ action: 'djRaffleList', ...pw });
+  assert.deepEqual(r.entries.map((e) => e.handle), ['@keep_me', '@test_entry']);
+  r = g.call.post({ action: 'djRaffleRemove', ticket: 2, ...pw });
+  assert.equal(r.entries.find((e) => e.ticket === 2).removed, true);
+  assert.equal(r.state.raffle.entries, 1);
+  assert.equal(g.call.post({ action: 'djDraw', ...pw }).winner.handle, '@keep_me', 'removed entries are never drawn');
+  r = g.call.post({ action: 'djRaffleRestore', ticket: 2, ...pw });
+  assert.equal(r.state.raffle.entries, 2);
+  assert.match(g.call.post({ action: 'djRaffleRemove', ticket: 99, ...pw }).error, /not found/);
+});
+
+test('health check reports the version and counts', () => {
+  const g = fresh();
+  g.call.post({ action: 'raffle', handle: 'healthy', platform: 'instagram', client: CLIENT });
+  const h = g.call.get({ action: 'health' });
+  assert.equal(h.ok, true);
+  assert.equal(h.raffleEntries, 1);
+  assert.equal(h.tidy, true);
+  assert.match(h.version, /^2026-10-10/);
+  assert.equal(g.call.get().version, h.version);
 });

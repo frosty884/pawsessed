@@ -420,19 +420,109 @@ function initYouTube() {
 }
 
 // ------------------------------------------------------------------ backend (Google Apps Script web app)
-async function call(method, body) {
+async function call(method, body, { timeout = 25000 } = {}) {
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), 20000);
+  const timer = setTimeout(() => ctl.abort(), timeout);
   try {
     // a plain-text POST avoids a CORS preflight, which Apps Script cannot answer
     const res = method === 'GET'
       ? await fetch(`${API}${API.includes('?') ? '&' : '?'}action=state&_=${Date.now()}`, { signal: ctl.signal, cache: 'no-store' })
       : await fetch(API, { method: 'POST', body: JSON.stringify({ client: clientId, ...body }), signal: ctl.signal });
-    return await res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      // Google sometimes answers with an HTML error page (quota, outage): treat it as "try again"
+      return { ok: false, retry: true, network: true, error: 'The request box hiccuped. Trying again…' };
+    }
   } catch (e) {
-    return { ok: false, error: e.name === 'AbortError' ? 'That took too long. Check your signal and try again.' : "Couldn't reach the request box. Try again in a moment.", network: true };
+    return {
+      ok: false, retry: true, network: true,
+      error: e.name === 'AbortError' ? 'That took too long. Check your signal and try again.' : "Couldn't reach the request box. Try again in a moment.",
+    };
   } finally {
     clearTimeout(timer);
+  }
+}
+
+// ------------------------------------------------------------------ submissions that survive a bad connection
+// Requests, raffle entries and hearts carry an id (sid). If sending fails because of the connection or a busy
+// server, they wait here, saved on the phone, and are re-sent with backoff. The server answers a repeated sid
+// without saving it twice, so nothing is lost and nothing is doubled.
+const OUTBOX = 'outbox';
+const newSid = () => (crypto.randomUUID ? crypto.randomUUID() : 's' + Math.random().toString(36).slice(2) + Date.now().toString(36));
+const outboxItems = () => store.get(OUTBOX, []).filter((x) => x && x.body && Date.now() - x.at < 6 * 3600e3);
+const saveOutbox = (items) => store.set(OUTBOX, items.slice(-20));
+const transient = (r) => !r.ok && !!(r.retry || r.network || r.code === 503 || r.code === 500);
+let flushTimer = 0, flushing = false;
+
+async function submit(body) {
+  const item = { sid: newSid(), body, at: Date.now(), tries: 0 };
+  let r = await call('POST', { ...body, sid: item.sid });
+  if (transient(r) && !r.network) {
+    // busy server: one quick retry before parking it
+    await new Promise((res) => setTimeout(res, 1500));
+    r = await call('POST', { ...body, sid: item.sid });
+  }
+  if (transient(r)) {
+    saveOutbox([...outboxItems(), item]);
+    renderPending();
+    scheduleFlush(4000);
+    return { ...r, queued: true };
+  }
+  return r;
+}
+
+function scheduleFlush(ms) {
+  clearTimeout(flushTimer);
+  flushTimer = setTimeout(flushOutbox, ms);
+}
+
+async function flushOutbox() {
+  if (flushing || !API) return;
+  const items = outboxItems();
+  if (!items.length) return renderPending();
+  flushing = true;
+  const left = [];
+  for (const item of items) {
+    const r = await call('POST', { ...item.body, sid: item.sid });
+    if (r.ok) onSent(item.body, r, true);
+    else if (transient(r)) { item.tries++; left.push(item); }
+    else onSendFailed(item.body, r);
+  }
+  // keep anything that was added while we were sending
+  const added = outboxItems().filter((x) => !items.some((i) => i.sid === x.sid));
+  const pending = [...left, ...added];
+  saveOutbox(pending);
+  flushing = false;
+  renderPending();
+  if (pending.length) scheduleFlush(Math.min(120000, 5000 * 2 ** Math.min(5, pending[0].tries || 0)));
+}
+
+function onSent(body, r, late) {
+  if (body.action === 'request') onRequestDone(r, body, late);
+  else if (body.action === 'raffle') onRaffleDone(r, late);
+  else if (r.state) applyState(r.state);
+}
+
+function onSendFailed(body, r) {
+  const what = body.action === 'request' ? `Your request for “${body.title}”` : body.action === 'raffle' ? 'Your raffle entry' : 'Your ♥';
+  if (body.action === 'vote') { hearts.delete(body.id); saveHearts(); renderQueue(); }
+  toast(`${what} couldn't be sent: ${r.error || 'something went wrong'}`, 6000);
+}
+
+function renderPending() {
+  const items = outboxItems();
+  const reqs = items.filter((x) => x.body.action === 'request');
+  const raffle = items.find((x) => x.body.action === 'raffle');
+  const rp = $('#req-pending'), fp = $('#raffle-pending');
+  if (rp) {
+    rp.hidden = !reqs.length;
+    rp.textContent = reqs.length ? `⏳ ${reqs.length === 1 ? `“${reqs[0].body.title}” is` : `${reqs.length} requests are`} saved on your phone and will send by itself.` : '';
+  }
+  if (fp) {
+    fp.hidden = !raffle;
+    fp.textContent = raffle ? `⏳ Your entry for ${raffle.body.handle} is saved on your phone and will send by itself.` : '';
   }
 }
 
@@ -449,24 +539,32 @@ function applyState(s) {
   celebratePlayed();
 }
 
+let lastRefresh = 0;
 async function refresh() {
   if (!API) return;
+  lastRefresh = Date.now();
   const s = await call('GET');
   const live = $('#live');
   if (s.ok) {
     failures = 0;
     live.className = 'live on';
     applyState(s);
+    if (outboxItems().length) flushOutbox();
   } else {
     failures++;
     live.className = 'live err';
   }
+  const trouble = $('#req-trouble');
+  if (trouble) trouble.hidden = failures < 2;
 }
 
+// poll often while the queue or raffle is on screen (or for DJs), gently otherwise; spread out with jitter so a
+// room full of phones doesn't hit the sheet at the same moment
+let queueInView = false;
 function schedulePoll() {
   clearTimeout(pollTimer);
-  const base = djPassword() ? 8000 : (CFG.pollMs || 15000);
-  const wait = base * Math.min(4, 1 + failures);
+  const base = djPassword() ? 8000 : queueInView ? (CFG.pollMs || 15000) : 45000;
+  const wait = base * Math.min(4, 1 + failures) * (0.85 + Math.random() * 0.3);
   pollTimer = setTimeout(async () => {
     if (document.visibilityState === 'visible') await refresh();
     schedulePoll();
@@ -539,14 +637,34 @@ function renderQueue() {
 
 async function heart(id, li) {
   if (hearts.has(id)) return toast('You already hearted this one 💗');
-  const btn = $('.heart', li);
-  btn.disabled = true;
-  const r = await call('POST', { action: 'vote', id });
-  btn.disabled = false;
-  if (!r.ok) return toast(r.error || 'Could not heart that');
   hearts.add(id); saveHearts();
+  const btn = $('.heart', li);
+  btn.classList.add('mine');
   buzz(12);
+  const r = await submit({ action: 'vote', id });
+  if (r.queued) return toast('Saved your ♥. It sends as soon as the connection is back.');
+  if (!r.ok) {
+    hearts.delete(id); saveHearts();
+    btn.classList.remove('mine');
+    return toast(r.error || 'Could not heart that');
+  }
   applyState(r.state);
+}
+
+function onRequestDone(r, data, late = false) {
+  store.set('name', data.by);
+  hearts.add(r.id); saveHearts();
+  mine.add(r.id); store.set('mine', [...mine].slice(-50));
+  applyState(r.state);
+  confetti(50);
+  buzz();
+  if (late) return toast(`🎶 Your request for “${data.title}” went through!`, 4500);
+  const pos = r.state.queue.findIndex((q) => q.id === r.id) + 1;
+  setMsg($('#req-msg'), r.merged ? 'Someone already asked for that one, so we added your ♥ to it!' : pos ? `Sent! 🎶 You're #${pos} in the queue.` : 'Sent! 🎶', 'ok');
+  // keyboard down, then flash the song where it landed in the queue
+  const li = $(`#queue li[data-id="${CSS.escape(r.id)}"]`);
+  afterSend(li || $('#req-msg'));
+  if (li) { li.classList.add('flash'); setTimeout(() => li.classList.remove('flash'), 1800); }
 }
 
 function initRequests() {
@@ -560,8 +678,10 @@ function initRequests() {
   const by = form.elements.by;
   by.value = store.get('name', '');
   enterToNext(form);
+  let sending = false;
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (sending) return;
     const data = { title: form.elements.title.value.trim(), artist: form.elements.artist.value.trim(), by: by.value.trim() };
     if (!data.title || !data.artist || !data.by) {
       setMsg(msg, 'Fill in the title, artist and your name 🙏', 'err');
@@ -570,28 +690,26 @@ function initRequests() {
       return;
     }
     const btn = $('button[type=submit]', form);
+    sending = true;
     btn.disabled = true;
     setMsg(msg, 'Sending…');
-    const r = await call('POST', { action: 'request', ...data });
+    const r = await submit({ action: 'request', ...data });
+    sending = false;
     btn.disabled = false;
+    if (r.queued) {
+      store.set('name', data.by);
+      form.elements.title.value = '';
+      form.elements.artist.value = '';
+      setMsg(msg, '📶 Weak signal. Your request is saved on your phone and will send by itself.', 'ok');
+      return afterSend(msg);
+    }
     if (!r.ok) {
       setMsg(msg, r.error || 'Something went wrong. Try again!', 'err');
       return keepVisible(msg, 0);
     }
-    store.set('name', data.by);
-    hearts.add(r.id); saveHearts();
-    mine.add(r.id); store.set('mine', [...mine].slice(-50));
-    applyState(r.state);
-    const pos = r.state.queue.findIndex((q) => q.id === r.id) + 1;
-    setMsg(msg, r.merged ? 'Someone already asked for that one, so we added your ♥ to it!' : `Sent! 🎶 You're #${pos} in the queue.`, 'ok');
     form.elements.title.value = '';
     form.elements.artist.value = '';
-    confetti(50);
-    buzz();
-    // keyboard down, then flash the song where it landed in the queue
-    const li = $(`#queue li[data-id="${CSS.escape(r.id)}"]`);
-    afterSend(li || msg);
-    if (li) { li.classList.add('flash'); setTimeout(() => li.classList.remove('flash'), 1800); }
+    onRequestDone(r, data);
   });
 }
 
@@ -652,6 +770,22 @@ function renderRaffleState() {
   }
 }
 
+const IG_HANDLE = /^@?[a-z0-9._]{1,30}$/i;
+const TG_HANDLE = /^@?[a-z0-9_]{5,32}$/i;
+
+function onRaffleDone(r, late = false) {
+  store.set('ticket', { ticket: r.ticket, handle: r.handle, platform: r.platform });
+  renderTicket();
+  applyState(r.state);
+  if (!r.already) { confetti(110); buzz(); }
+  if (late) return toast(`🎟️ Your raffle entry went through! Ticket #${r.ticket}`, 5000);
+  const missing = 5 - followed.size;
+  setMsg($('#raffle-msg'), r.already ? `You were already in with ticket #${r.ticket} ✓`
+    : r.check ? `You're in with ticket #${r.ticket}! That @ looked a little unusual, so double-check it's right.`
+    : missing > 0 ? `You're in! Follow the other ${missing} above so your entry counts.` : "You're in! Good luck 🍀", 'ok');
+  afterSend($('#ticket'));
+}
+
 function initRaffle() {
   $$('#follows a').forEach((a) => a.addEventListener('click', () => {
     followed.add(a.dataset.follow);
@@ -668,29 +802,41 @@ function initRaffle() {
     return;
   }
   enterToNext(form);
+  // a gentle hint while typing; the entry still goes in either way
+  const hint = () => {
+    const h = form.elements.handle.value.trim().replace(/^https?:\/\/(www\.)?(instagram\.com|t\.me)\//i, '');
+    const platform = form.elements.platform.value;
+    if (!h || msg.classList.contains('ok')) return;
+    const looks = (platform === 'telegram' ? TG_HANDLE : IG_HANDLE).test(h);
+    setMsg(msg, looks ? '' : platform === 'telegram' ? 'Tip: Telegram usernames are 5+ letters, numbers or _ (it still works if yours is different).' : 'Tip: just your Instagram username, like @frostyxlr8.');
+  };
+  form.elements.handle.addEventListener('input', () => { if (msg.classList.contains('err') || msg.textContent.startsWith('Tip')) hint(); });
+  form.elements.handle.addEventListener('blur', hint);
+  let sending = false;
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (sending) return;
     const handle = form.elements.handle.value.trim();
     const platform = form.elements.platform.value;
     if (!handle) { setMsg(msg, 'Add your @ first', 'err'); form.elements.handle.focus(); return; }
     const btn = $('button[type=submit]', form);
+    sending = true;
     btn.disabled = true;
     setMsg(msg, 'Entering…');
-    const r = await call('POST', { action: 'raffle', handle, platform, follows: [...followed] });
+    const r = await submit({ action: 'raffle', handle, platform, follows: [...followed] });
+    sending = false;
     btn.disabled = false;
+    if (r.queued) {
+      form.elements.handle.value = '';
+      setMsg(msg, '📶 Weak signal. Your entry is saved on your phone and will send by itself.', 'ok');
+      return afterSend(msg);
+    }
     if (!r.ok) {
       setMsg(msg, r.error || 'Something went wrong. Try again!', 'err');
       return keepVisible(msg, 0);
     }
-    store.set('ticket', { ticket: r.ticket, handle: r.handle, platform: r.platform });
-    renderTicket();
-    applyState(r.state);
     form.elements.handle.value = '';
-    const missing = 5 - followed.size;
-    setMsg(msg, r.already ? `You were already in with ticket #${r.ticket} ✓`
-      : missing > 0 ? `You're in! Follow the other ${missing} above so your entry counts.` : "You're in! Good luck 🍀", 'ok');
-    if (!r.already) { confetti(110); buzz(); }
-    afterSend($('#ticket'));
+    onRaffleDone(r);
   });
 }
 
@@ -702,7 +848,38 @@ function setDjMode(on) {
   schedulePoll();
 }
 
+async function loadDjRaffle() {
+  const box = $('#dj-raffle');
+  if (!box || !djPassword()) return;
+  if (state && !state.version) { box.hidden = true; return; } // older backend without raffle management
+  const r = await call('POST', { action: 'djRaffleList', password: djPassword() });
+  if (!r.ok) { box.hidden = r.error === 'Unknown action'; return; }
+  box.hidden = false;
+  renderDjRaffle(r.entries || []);
+}
+
+function renderDjRaffle(entries) {
+  const live = entries.filter((e) => !e.removed);
+  $('#dj-raffle-count').textContent = `(${live.length})`;
+  const list = $('#dj-raffle-list');
+  list.replaceChildren(...entries.slice().reverse().map((e) => el('li', { class: e.removed ? 'removed' : '' },
+    el('span', { class: 'dr-main', text: `#${e.ticket} ${e.handle}` }),
+    el('span', { class: 'dr-sub', text: `${e.platform} · ${e.followed}/5 followed${e.check ? ' · double-check' : ''}${e.winner ? ' · 🏆 winner' : ''}` }),
+    el('button', {
+      type: 'button', class: 'dr-act', text: e.removed ? 'undo' : '✕',
+      'aria-label': e.removed ? `Put ticket ${e.ticket} back in the draw` : `Take ticket ${e.ticket} out of the draw`,
+      onclick: async () => {
+        const res = await call('POST', { action: e.removed ? 'djRaffleRestore' : 'djRaffleRemove', ticket: e.ticket, password: djPassword() });
+        if (!res.ok) return toast(res.error || 'That did not work');
+        applyState(res.state);
+        renderDjRaffle(res.entries || []);
+      },
+    }))));
+  $('#dj-raffle-empty').hidden = entries.length > 0;
+}
+
 function fillDjPanel() {
+  loadDjRaffle();
   const s = (state && state.settings) || {};
   const sheet = session.get('sheetUrl');
   $('#dj-sheet').hidden = !sheet;
@@ -824,9 +1001,27 @@ function boot() {
   initDj();
   if (API) {
     $('#live').className = 'live';
+    if ('IntersectionObserver' in window) {
+      const seen = new Set();
+      new IntersectionObserver((entries) => {
+        entries.forEach((e) => (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target)));
+        const was = queueInView;
+        queueInView = seen.size > 0;
+        if (queueInView && !was && Date.now() - lastRefresh > 8000) refresh().then(schedulePoll);
+      }, { rootMargin: '200px 0px' }).observe($('#requests'));
+    } else {
+      queueInView = true;
+    }
     refresh().then(schedulePoll);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
+    renderPending();
+    flushOutbox();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - lastRefresh > 5000) refresh();
+      flushOutbox();
+    });
+    window.addEventListener('online', () => { refresh(); flushOutbox(); });
   }
-  window.__pawsessed = { refresh, partyStatus, get state() { return state; }, api: API };
+  window.__pawsessed = { refresh, flushOutbox, partyStatus, get state() { return state; }, api: API, outbox: outboxItems };
 }
 boot();

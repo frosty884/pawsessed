@@ -1,5 +1,9 @@
 // A small in-memory stand-in for the Apps Script services Code.gs uses, so the real backend code can run
 // under Node for unit tests and behind a local HTTP server for the browser tests.
+//
+// It copies the Sheets behaviours that matter for correctness: a checkbox cell holds FALSE (so it counts
+// as content for getLastRow, which is what pushed rows below row 1000 in the first version), clearing,
+// row deletion, formula injection, and a script lock that can be made busy.
 import { readFileSync } from 'node:fs';
 import { randomUUID, createHash } from 'node:crypto';
 import vm from 'node:vm';
@@ -7,7 +11,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const CODE = path.join(HERE, '..', 'apps-script', 'Code.gs');
+// GAS_CODE lets a test run the site against another version of the backend (e.g. the one still deployed)
+const CODE = process.env.GAS_CODE || path.join(HERE, '..', 'apps-script', 'Code.gs');
 
 // formatting calls (fonts, colours, validation, widths) are no-ops: any method returns the same chainable object
 const chain = () => {
@@ -25,11 +30,14 @@ class Sheet {
   appendRow(values) { this.cells[this.getLastRow()] = values.map(cellValue); return this; }
   getRange(a, b, c, d) {
     if (typeof a === 'string') return chain(); // A1 notation is only used for formatting
+    if (!(a >= 1 && b >= 1 && (c ?? 1) >= 1 && (d ?? 1) >= 1)) throw new Error(`bad range ${a},${b},${c},${d}`);
     return new Range(this, a, b, c || 1, d || 1);
   }
+  deleteRows(start, n) { this.cells.splice(start - 1, n); return this; }
   // test helpers
-  rows() { return this.cells.slice(1).filter(Boolean).map((r) => r.slice()); }
+  rows() { return this.cells.slice(1).filter((r) => r && r.some((v) => v !== '' && v != null && v !== false)).map((r) => r.slice()); }
   set(row, col, v) { (this.cells[row - 1] ||= [])[col - 1] = cellValue(v); }
+  isCheckbox(row, col) { return this.checkboxes.has(`${row},${col}`); }
 }
 
 // mimic Sheets: a string starting with = is a formula (we record that to catch injection), a leading ' is dropped
@@ -41,6 +49,7 @@ function cellValue(v) {
 
 class Range {
   constructor(sheet, row, col, nr, nc) { Object.assign(this, { sheet, row, col, nr, nc }); }
+  each(fn) { for (let r = 0; r < this.nr; r++) for (let c = 0; c < this.nc; c++) fn(this.row + r, this.col + c); }
   getValues() {
     const out = [];
     for (let r = 0; r < this.nr; r++) {
@@ -56,11 +65,23 @@ class Range {
   }
   getValue() { return this.getValues()[0][0]; }
   setValues(vals) {
+    if (vals.length !== this.nr || vals.some((l) => l.length !== this.nc)) throw new Error('setValues: data does not match the range size');
     vals.forEach((line, r) => line.forEach((v, c) => this.sheet.set(this.row + r, this.col + c, v)));
     return this;
   }
   setValue(v) { this.sheet.set(this.row, this.col, v); return this; }
-  insertCheckboxes() { return this; }
+  // like Sheets: cells become checkboxes; ticked/unticked values are kept and blank cells become FALSE
+  // (blank-but-FALSE cells count as content for getLastRow, which is what pushed rows below row 1000)
+  insertCheckboxes() {
+    this.each((r, c) => {
+      this.sheet.checkboxes.add(`${r},${c}`);
+      const v = (this.sheet.cells[r - 1] || [])[c - 1];
+      if (v !== true && v !== false) this.sheet.set(r, c, false);
+    });
+    return this;
+  }
+  clearContent() { this.each((r, c) => { if (this.sheet.cells[r - 1]) this.sheet.cells[r - 1][c - 1] = ''; }); return this; }
+  clearDataValidations() { this.each((r, c) => this.sheet.checkboxes.delete(`${r},${c}`)); return this; }
 }
 // every other Range method is formatting
 const rangeProxy = (r) => {
@@ -98,17 +119,19 @@ export function createGas({ now = () => Date.now(), standalone = false } = {}) {
   };
   const props = new Map();
   const alerts = [];
+  const lock = { busy: false };
   const ctx = {
     SpreadsheetApp: {
       getActiveSpreadsheet: () => (standalone ? null : ss),
       create: () => { created++; return ss; },
       openById: (id) => { if (id !== 'sheet-id-1') throw new Error('not found'); return ss; },
+      flush: () => {},
       newDataValidation: chain,
       newConditionalFormatRule: chain,
       getUi: () => ({ createMenu: () => chain(), alert: (m) => alerts.push(m) }),
     },
     CacheService: { getScriptCache: () => cache },
-    LockService: { getScriptLock: () => ({ waitLock() {}, tryLock: () => true, releaseLock() {} }) },
+    LockService: { getScriptLock: () => ({ waitLock() { if (lock.busy) throw new Error('lock timeout'); }, tryLock: () => !lock.busy, releaseLock() {} }) },
     PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => (props.has(k) ? props.get(k) : null), setProperty: (k, v) => props.set(k, String(v)) }) },
     ContentService: { MimeType: { JSON: 'application/json' }, createTextOutput: (s) => ({ s, setMimeType() { return this; }, getContent() { return this.s; } }) },
     Utilities: {
@@ -118,7 +141,7 @@ export function createGas({ now = () => Date.now(), standalone = false } = {}) {
       // Apps Script returns signed bytes
       computeDigest: (alg, s) => [...createHash(alg).update(String(s), 'utf8').digest()].map((b) => (b > 127 ? b - 256 : b)),
     },
-    console,
+    console: { log() {}, error() {} },
     Date,
     JSON,
     Math,
@@ -129,5 +152,5 @@ export function createGas({ now = () => Date.now(), standalone = false } = {}) {
     get: (params = {}) => JSON.parse(ctx.doGet({ parameter: params }).getContent()),
     post: (body) => JSON.parse(ctx.doPost({ postData: { contents: typeof body === 'string' ? body : JSON.stringify(body) } }).getContent()),
   };
-  return { ctx, ss, sheets, cache, props, alerts, call, sheet: (n) => sheets.get(n), created: () => created };
+  return { ctx, ss, sheets, cache, props, alerts, lock, call, sheet: (n) => sheets.get(n), created: () => created };
 }
