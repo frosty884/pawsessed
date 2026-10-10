@@ -12,9 +12,11 @@ const makeStore = (area) => ({
 const store = makeStore(window.localStorage);
 const session = makeStore(window.sessionStorage);
 
-// tests point the page at a local mock backend with ?api=http://localhost:PORT/exec; nothing else may override it
+// tests point the page at a local mock backend with ?api=http://localhost:PORT/exec, or switch it off with
+// ?api=off so they never touch the real sheet; nothing else may override it
 function resolveApi() {
   const q = new URLSearchParams(location.search).get('api');
+  if (q === 'off') return '';
   if (q && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(q)) return q;
   return CFG.apiUrl || '';
 }

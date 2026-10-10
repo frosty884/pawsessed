@@ -29,7 +29,7 @@ async function shoot(name, { width, height, mobile, query = '' }) {
   await page.close();
 }
 await shoot('phone', { width: 390, height: 844, mobile: true, query: `?api=${api}` });
-await shoot('phone-offline', { width: 390, height: 844, mobile: true });
+await shoot('phone-offline', { width: 390, height: 844, mobile: true, query: '?api=off' });
 await shoot('desktop', { width: 1280, height: 900, query: `?api=${api}` });
 await browser.close();
 server.close();

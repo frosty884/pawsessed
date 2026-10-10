@@ -28,7 +28,7 @@ async function open({ width = 390, height = 844, live = true, query = '' } = {})
   page.on('console', (m) => { if (m.type() === 'error' && !/i\.ytimg\.com|ERR_/.test(m.text())) errors.push(m.text()); });
   await page.setViewport({ width, height, deviceScaleFactor: 1, isMobile: width < 700, hasTouch: width < 700 });
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
-  const q = [live ? `api=${api}` : '', query].filter(Boolean).join('&');
+  const q = [live ? `api=${api}` : 'api=off', query].filter(Boolean).join('&');
   await page.goto(base + (q ? '?' + q : ''), { waitUntil: 'domcontentloaded' });
   if (live) await page.waitForFunction(() => window.__pawsessed && window.__pawsessed.state, { timeout: 10000 });
   return page;
@@ -41,7 +41,7 @@ test('room number and building are on screen as soon as the page loads (no scrol
   const page = await browser.newPage();
   await page.setJavaScriptEnabled(false);
   await page.setViewport({ width: 360, height: 740, isMobile: true });
-  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  await page.goto(base + '?api=off', { waitUntil: 'domcontentloaded' });
   const box = await page.$eval('#room-num', (e) => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, text: e.textContent }; });
   assert.equal(box.text, '7416');
   assert.ok(box.bottom < 740, `room number is above the fold (bottom at ${box.bottom}px)`);
