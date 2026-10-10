@@ -157,40 +157,50 @@ function initRoomBar() {
   }).observe(card);
 }
 
-// ------------------------------------------------------------------ map: paw prints along the route
+// ------------------------------------------------------------------ map: the walk draws itself, paws pop in behind it
+const MAP_DRAW_S = 2.4;
 function initMap() {
   const svg = $('#map'), route = $('#route'), paws = $('#paws');
-  if (!svg || !route.getTotalLength) return;
+  if (!svg || !route || !route.getTotalLength) return;
   const ns = 'http://www.w3.org/2000/svg';
   const len = route.getTotalLength();
-  const step = 44;
+  const step = 34;
   let i = 0;
-  for (let d = 18; d < len - 30; d += step, i++) {
+  for (let d = 28; d < len - 26; d += step, i++) {
     const p = route.getPointAtLength(d);
     const q = route.getPointAtLength(Math.min(len, d + 1));
     const ang = (Math.atan2(q.y - p.y, q.x - p.x) * 180) / Math.PI + 90;
-    const side = i % 2 ? 9 : -9;
+    const side = i % 2 ? 8 : -8;
     const nx = -(q.y - p.y), ny = q.x - p.x, nl = Math.hypot(nx, ny) || 1;
+    // the outer group places the print; the inner one pops in (a CSS transform would replace the placement)
+    const at = document.createElementNS(ns, 'g');
+    at.setAttribute('transform', `translate(${(p.x + (nx / nl) * side).toFixed(1)} ${(p.y + (ny / nl) * side).toFixed(1)}) rotate(${ang.toFixed(1)}) scale(.8)`);
     const g = document.createElementNS(ns, 'g');
     g.setAttribute('class', 'paw');
-    g.setAttribute('style', `--i:${i}`);
-    g.setAttribute('transform', `translate(${(p.x + (nx / nl) * side).toFixed(1)} ${(p.y + (ny / nl) * side).toFixed(1)}) rotate(${ang.toFixed(1)}) scale(.9)`);
-    g.innerHTML = '<ellipse cx="0" cy="3" rx="7" ry="6" fill="#ffd6f2"/><circle cx="-7" cy="-5" r="2.8" fill="#ffd6f2"/><circle cx="-2.5" cy="-8.5" r="2.8" fill="#ffd6f2"/><circle cx="2.5" cy="-8.5" r="2.8" fill="#ffd6f2"/><circle cx="7" cy="-5" r="2.8" fill="#ffd6f2"/>';
-    paws.append(g);
+    g.setAttribute('style', `--d:${((d / len) * MAP_DRAW_S).toFixed(2)}s`);
+    g.innerHTML = '<ellipse cx="0" cy="3" rx="7" ry="6"/><circle cx="-7" cy="-5" r="2.8"/><circle cx="-2.5" cy="-8.5" r="2.8"/><circle cx="2.5" cy="-8.5" r="2.8"/><circle cx="7" cy="-5" r="2.8"/>';
+    at.append(g);
+    paws.append(at);
   }
+  const startWisp = (root) => $$('animateMotion', root).forEach((m) => { try { m.beginElement(); } catch { /* no SMIL */ } });
+
   // tap the map to open a big, pannable copy (labels are small on a phone)
   const card = $('#map-card'), zoom = $('#map-zoom'), scroll = $('#map-zoom-scroll');
   const openZoom = () => {
     const copy = svg.cloneNode(true);
     copy.removeAttribute('id');
+    $$('[mask]', copy).forEach((e) => e.removeAttribute('mask'));
+    copy.classList.remove('will-draw');
     copy.classList.add('drawn');
     scroll.replaceChildren(copy);
     zoom.hidden = false;
     document.body.style.overflow = 'hidden';
+    if (!reducedMotion) startWisp(copy);
     // start on the walk from the hotel to villa D
     requestAnimationFrame(() => {
-      scroll.scrollLeft = (scroll.scrollWidth - scroll.clientWidth) * 0.62;
-      scroll.scrollTop = (scroll.scrollHeight - scroll.clientHeight) * 0.35;
+      // centre on the middle of the walk (map units ~700, 480 in the 280..1000 x 20..1020 window)
+      scroll.scrollLeft = scroll.scrollWidth * ((700 - 280) / 720) - scroll.clientWidth / 2;
+      scroll.scrollTop = scroll.scrollHeight * ((480 - 20) / 1000) - scroll.clientHeight / 2;
     });
     $('#map-zoom-close').focus();
   };
@@ -199,9 +209,14 @@ function initMap() {
   card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openZoom(); } });
   $('#map-zoom-close').addEventListener('click', closeZoom);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !zoom.hidden) closeZoom(); });
-  const reveal = () => svg.classList.add('drawn');
+
+  const reveal = () => {
+    svg.classList.add('drawn');
+    if (!reducedMotion) setTimeout(() => startWisp(svg), MAP_DRAW_S * 1000);
+  };
   if (!('IntersectionObserver' in window) || reducedMotion) return reveal();
-  const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { reveal(); io.disconnect(); } }, { threshold: 0.3 });
+  svg.classList.add('will-draw');
+  const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { reveal(); io.disconnect(); } }, { threshold: 0.35 });
   io.observe(svg);
 }
 

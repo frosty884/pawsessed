@@ -284,3 +284,21 @@ test('DJ portal can draw the raffle winner and shows the Google Sheet link', asy
   await page.waitForSelector('#winner', { hidden: true });
   await page.close();
 });
+
+test('map: the walk draws, paw prints land on the map along the route, markers show', async () => {
+  const page = await open({ live: false });
+  await page.evaluate(() => document.querySelector('#map').scrollIntoView({ block: 'center' }));
+  await page.waitForFunction(() => document.querySelector('#map').classList.contains('drawn'));
+  const r = await page.evaluate(() => {
+    const map = document.querySelector('#map').getBoundingClientRect();
+    const paws = [...document.querySelectorAll('#map .paw')].map((p) => p.getBoundingClientRect());
+    const inside = paws.filter((b) => b.width > 0 && b.left >= map.left - 1 && b.right <= map.right + 1 && b.top >= map.top - 1 && b.bottom <= map.bottom + 1);
+    const steps = [...document.querySelectorAll('#map .m-step text')].map((t) => t.textContent);
+    return { paws: paws.length, inside: inside.length, steps, card: document.querySelector('.m-card-room').textContent };
+  });
+  assert.ok(r.paws >= 20, `${r.paws} paw prints`);
+  assert.equal(r.inside, r.paws, 'every paw print sits inside the map');
+  assert.deepEqual(r.steps, ['1', '2', '3']);
+  assert.equal(r.card, '7416');
+  await page.close();
+});

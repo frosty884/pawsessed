@@ -45,4 +45,4 @@ npm run serve       # http://localhost:8787/?api=http://localhost:8787/api/exec 
 npm run shots       # phone + desktop screenshots in tests/shots/
 ```
 
-`tools/prep_assets.py` rebuilds the images, flyers and promo media from the promo project.
+`tools/prep_assets.py` rebuilds the images, flyers and promo media from the promo project. `tools/build_map.py` redraws the map from the official Chula Vista resort map (roads, water and trees are traced; the route, buildings and labels are placed by hand in that file) and writes it into `index.html`.
